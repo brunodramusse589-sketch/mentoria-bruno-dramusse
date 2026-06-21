@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Mentoria Bruno Dramusse Refined (Vite / TanStack Start)",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev"],
+      "port": 8080,
+      "cwd": "C:\\Users\\Bruno  Dramusse\\Downloads\\Projectos\\Mentoria Bruno Dramusse"
+    }
+  ]
+}
