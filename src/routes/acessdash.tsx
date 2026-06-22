@@ -261,28 +261,20 @@ function Dashboard() {
             <table className="w-full text-sm">
               <thead className="bg-white/5 text-left text-xs uppercase text-white/50">
                 <tr>
+                  <th className="px-4 py-3 whitespace-nowrap">Data</th>
                   <th className="px-4 py-3 whitespace-nowrap">Nome</th>
                   <th className="px-4 py-3 whitespace-nowrap">WhatsApp</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Instagram</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Como conheceu</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Modelo negócio</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Dificuldade</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Objetivo 90d</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Autodidata</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Caixa</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Dúvidas</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Horários</th>
                   <th className="px-4 py-3 whitespace-nowrap">Compromisso</th>
                   <th className="px-4 py-3 whitespace-nowrap">Investimento</th>
                   <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Atualizado</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Contactar</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={15} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={15} className="px-4 py-8 text-center text-white/50">Nenhuma resposta ainda</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-white/50">Nenhuma resposta ainda</td></tr>
                 ) : (
                   filtered.map((s) => (
                     <tr
@@ -290,26 +282,20 @@ function Dashboard() {
                       onClick={() => setSelected(s)}
                       className="border-t border-white/5 hover:bg-white/5 cursor-pointer"
                     >
-                      <td className="px-4 py-3 whitespace-nowrap">{s.nome ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">{s.whatsapp ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">{s.instagram ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.conheceu ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.modelo ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 text-xs max-w-[160px] truncate">{s.answers?.dificuldade ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 text-xs max-w-[160px] truncate">{s.answers?.objetivo ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.autodidata ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.caixa ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 text-xs max-w-[160px] truncate">{s.answers?.duvidas ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.flexivel ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-white/60 text-xs">
+                        {new Date(s.started_at).toLocaleDateString("pt-BR")}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap font-medium">{s.nome ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-white/80">{s.whatsapp ?? <span className="text-white/30">—</span>}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.compromisso ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs font-medium" style={{ color: s.answers?.investimento?.toUpperCase().startsWith("SIM") ? "#22c55e" : s.answers?.investimento === "NÃO" ? "#ef4444" : undefined }}>
-                        {s.answers?.investimento ?? <span className="text-white/30">—</span>}
+                      <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold" style={{ color: s.answers?.investimento?.toUpperCase().startsWith("SIM") ? "#22c55e" : s.answers?.investimento === "NÃO" ? "#ef4444" : undefined }}>
+                        {s.answers?.investimento ?? <span className="text-white/30 font-normal">—</span>}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <StatusBadge session={s} />
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-white/60 text-xs">
-                        {new Date(s.updated_at).toLocaleString("pt-BR")}
+                      <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <WhatsAppButton session={s} />
                       </td>
                     </tr>
                   ))
@@ -343,6 +329,43 @@ function StatusBadge({ session }: { session: Session }) {
   if (session.completed) return <span className="rounded-md bg-blue-500/15 text-blue-400 px-2 py-0.5 text-xs">Finalizou</span>;
   if (session.current_step > 0) return <span className="rounded-md bg-yellow-500/15 text-yellow-400 px-2 py-0.5 text-xs">Em progresso</span>;
   return <span className="rounded-md bg-white/10 text-white/50 px-2 py-0.5 text-xs">Abriu</span>;
+}
+
+function WhatsAppButton({ session }: { session: Session }) {
+  const nome = session.nome ?? "você";
+  const phone = (session.whatsapp ?? "").replace(/\D/g, "");
+  if (!phone) return <span className="text-white/20 text-xs">sem número</span>;
+
+  const isQualified = session.qualified === true;
+  const isNotQualified = session.qualified === false;
+
+  let msg = "";
+  if (isQualified) {
+    msg = `Olá ${nome}! 👋 Aqui é o Bruno Dramusse. Vi que preencheste o formulário da Mentoria e estás pronto para investir no teu crescimento. Quero agendar uma call contigo para alinharmos tudo antes de fecharmos. Qual o melhor horário para ti?`;
+  } else if (isNotQualified) {
+    msg = `Olá ${nome}! 👋 Aqui é o Bruno Dramusse. Vi que preencheste o formulário da Mentoria. Entendo que o investimento individual pode estar além do alcance agora — mas tenho a solução certa para ti: o *Network Master*. Por uma fração do valor aprendes o método completo, generates os teus primeiros resultados e constróis o caixa. Depois é só fazer o upgrade para a Mentoria Individual e triplicar os teus ganhos. Queres saber mais?`;
+  } else {
+    return <span className="text-white/20 text-xs">—</span>;
+  }
+
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-transform hover:scale-105 active:scale-95 ${
+        isQualified
+          ? "bg-[#22c55e]/20 text-[#22c55e] hover:bg-[#22c55e]/30"
+          : "bg-white/10 text-white/70 hover:bg-white/20"
+      }`}
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.05 21.785h-.004a9.87 9.87 0 01-5.031-1.378l-.36-.214-3.741.982.999-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.463 3.488z"/>
+      </svg>
+      {isQualified ? "Agendar call" : "Network Master"}
+    </a>
+  );
 }
 
 function DetailDrawer({ session, onClose }: { session: Session; onClose: () => void }) {
