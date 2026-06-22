@@ -603,47 +603,35 @@ function Dashboard() {
                     </button>
                   ))}
                 </div>
-                <div className="rounded-xl border border-white/10 overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-white/5 text-left text-xs uppercase text-white/50">
-                      <tr>
-                        <th className="px-4 py-3">Hora</th>
-                        <th className="px-4 py-3">Nome</th>
-                        <th className="px-4 py-3">WhatsApp</th>
-                        <th className="px-4 py-3">Tipo</th>
-                        <th className="px-4 py-3">Pagamento</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibleMsgs.map((m) => (
-                        <tr key={m.uid} className={`border-t border-white/5 hover:bg-white/5 ${paidIds.has(m.sessionId) ? "bg-emerald-500/5" : ""}`}>
-                          <td className="px-4 py-3 text-white/50 text-xs whitespace-nowrap">
-                            {new Date(m.sentAt).toLocaleString("pt-BR")}
-                          </td>
-                          <td className="px-4 py-3 font-medium whitespace-nowrap">{m.nome}</td>
-                          <td className="px-4 py-3 text-white/70 whitespace-nowrap">{m.phone}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {m.type === "individual" && <span className="rounded-full bg-green-500/15 text-green-400 px-2.5 py-1 text-xs font-medium">Mentoria Individual</span>}
-                            {m.type === "network_master" && <span className="rounded-full bg-blue-500/15 text-blue-400 px-2.5 py-1 text-xs font-medium">Network Master</span>}
-                            {m.type === "reengajamento" && <span className="rounded-full bg-yellow-500/15 text-yellow-400 px-2.5 py-1 text-xs font-medium">Reengajamento</span>}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <button
-                              onClick={() => togglePago(m)}
-                              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${paidIds.has(m.sessionId) ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70"}`}
-                            >
-                              {paidIds.has(m.sessionId) ? (
-                                <>
-                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                  Pago
-                                </>
-                              ) : "Marcar como pago"}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-2">
+                  {visibleMsgs.map((m) => (
+                    <div key={m.uid} className={`rounded-xl border border-white/10 p-4 ${paidIds.has(m.sessionId) ? "bg-emerald-500/5 border-emerald-500/20" : "bg-white/[0.03]"}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{m.nome}</p>
+                          <p className="text-xs text-white/50 mt-0.5">{m.phone}</p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                          m.type === "individual" ? "bg-green-500/15 text-green-400" :
+                          m.type === "network_master" ? "bg-blue-500/15 text-blue-400" :
+                          "bg-yellow-500/15 text-yellow-400"
+                        }`}>
+                          {m.type === "individual" ? "Individual" : m.type === "network_master" ? "NM" : "Reengaj."}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <p className="text-xs text-white/30">{new Date(m.sentAt).toLocaleString("pt-BR")}</p>
+                        <button
+                          onClick={() => togglePago(m)}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${paidIds.has(m.sessionId) ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"}`}
+                        >
+                          {paidIds.has(m.sessionId) ? (
+                            <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Pago</>
+                          ) : "Marcar pago"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </>
             )}
@@ -824,68 +812,86 @@ function Dashboard() {
           className="w-full max-w-md rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/30"
         />
 
-        {/* Table */}
-        <div className="rounded-xl border border-white/10 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-white/5 text-left text-xs uppercase text-white/50">
-                <tr>
-                  <th className="px-4 py-3 whitespace-nowrap">Data</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Nome</th>
-                  <th className="px-4 py-3 whitespace-nowrap">WhatsApp</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Compromisso</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Investimento</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Contactar</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Contactado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
-                ) : filtered.length === 0 ? (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-white/50">Nenhuma resposta ainda</td></tr>
-                ) : (
-                  filtered.map((s) => (
-                    <tr
-                      key={s.id}
-                      onClick={() => setSelected(s)}
-                      className={`border-t border-white/5 hover:bg-white/5 cursor-pointer transition-colors ${contacted.has(s.id) ? "bg-green-500/5" : ""}`}
-                    >
-                      <td className="px-4 py-3 whitespace-nowrap text-white/60 text-xs">
-                        {new Date(s.started_at).toLocaleDateString("pt-BR")}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap font-medium">{s.nome ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-white/80">{s.whatsapp ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.compromisso ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold" style={{ color: s.answers?.investimento?.toUpperCase()?.startsWith("SIM") ? "#22c55e" : s.answers?.investimento === "NÃO" ? "#ef4444" : undefined }}>
-                        {s.answers?.investimento ?? <span className="text-white/30 font-normal">—</span>}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap"><StatusBadge session={s} /></td>
-                      <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <WhatsAppButton session={s} onContact={(type) => recordMessage(s, type)} />
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => toggleContacted(s.id)}
-                          className="flex items-center justify-center w-7 h-7 rounded-full border transition-colors"
-                          style={contacted.has(s.id) ? { background: "#22c55e22", borderColor: "#22c55e" } : { background: "transparent", borderColor: "rgba(255,255,255,0.15)" }}
-                          title={contacted.has(s.id) ? "Marcar como não contactado" : "Marcar como contactado"}
-                        >
-                          {contacted.has(s.id) && (
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                          )}
-                        </button>
-                      </td>
+        {/* Cards mobile / Tabela desktop */}
+        {loading ? (
+          <p className="text-center text-white/50 py-8 text-sm">Carregando...</p>
+        ) : filtered.length === 0 ? (
+          <p className="text-center text-white/50 py-8 text-sm">Nenhuma resposta ainda</p>
+        ) : (
+          <>
+            {/* Mobile: cards */}
+            <div className="space-y-2 md:hidden">
+              {filtered.map((s) => (
+                <div
+                  key={s.id}
+                  className={`rounded-xl border border-white/10 p-4 cursor-pointer transition-colors ${contacted.has(s.id) ? "bg-green-500/5 border-green-500/10" : "bg-white/[0.03]"}`}
+                  onClick={() => setSelected(s)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{s.nome ?? <span className="text-white/30">Sem nome</span>}</p>
+                      <p className="text-xs text-white/50 mt-0.5">{s.whatsapp ?? "Sem número"}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <StatusBadge session={s} />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleContacted(s.id); }}
+                        className="flex items-center justify-center w-7 h-7 rounded-full border transition-colors shrink-0"
+                        style={contacted.has(s.id) ? { background: "#22c55e22", borderColor: "#22c55e" } : { background: "transparent", borderColor: "rgba(255,255,255,0.15)" }}
+                      >
+                        {contacted.has(s.id) && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <p className="text-xs text-white/30">{new Date(s.started_at).toLocaleDateString("pt-BR")}</p>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <WhatsAppButton session={s} onContact={(type) => recordMessage(s, type)} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: tabela */}
+            <div className="hidden md:block rounded-xl border border-white/10 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-white/5 text-left text-xs uppercase text-white/50">
+                    <tr>
+                      <th className="px-4 py-3 whitespace-nowrap">Data</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Nome</th>
+                      <th className="px-4 py-3 whitespace-nowrap">WhatsApp</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Investimento</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Contactar</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Contactado</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  </thead>
+                  <tbody>
+                    {filtered.map((s) => (
+                      <tr key={s.id} onClick={() => setSelected(s)} className={`border-t border-white/5 hover:bg-white/5 cursor-pointer transition-colors ${contacted.has(s.id) ? "bg-green-500/5" : ""}`}>
+                        <td className="px-4 py-3 whitespace-nowrap text-white/60 text-xs">{new Date(s.started_at).toLocaleDateString("pt-BR")}</td>
+                        <td className="px-4 py-3 whitespace-nowrap font-medium">{s.nome ?? <span className="text-white/30">—</span>}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-white/80">{s.whatsapp ?? <span className="text-white/30">—</span>}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold" style={{ color: s.answers?.investimento?.toUpperCase()?.startsWith("SIM") ? "#22c55e" : s.answers?.investimento === "NÃO" ? "#ef4444" : undefined }}>
+                          {s.answers?.investimento ?? <span className="text-white/30 font-normal">—</span>}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap"><StatusBadge session={s} /></td>
+                        <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}><WhatsAppButton session={s} onContact={(type) => recordMessage(s, type)} /></td>
+                        <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <button onClick={() => toggleContacted(s.id)} className="flex items-center justify-center w-7 h-7 rounded-full border transition-colors" style={contacted.has(s.id) ? { background: "#22c55e22", borderColor: "#22c55e" } : { background: "transparent", borderColor: "rgba(255,255,255,0.15)" }}>
+                            {contacted.has(s.id) && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
         </>}
       </div>
 
