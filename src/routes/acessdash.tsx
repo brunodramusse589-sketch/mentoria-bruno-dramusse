@@ -401,7 +401,7 @@ function WhatsAppButton({ session, onContact }: { session: Session; onContact?: 
     return <span className="text-white/20 text-xs">—</span>;
   }
 
-  const NM_LINK = "LINK_DO_NETWORK_MASTER_AQUI";
+  const NM_LINK = "https://checkout.escalepay.com/8162455";
   const nmOfertaMsg = `Que bom! Aqui estão todos os detalhes do *Network Master*:\n\n🎯 *Adquire Acesso a Todas as Funções do maior Grupo de Network de todos os tempos!*\n\n*O que recebes:*\n✅ Acesso a Calls Privadas (Com os Maiores Big Players do Digital)\n✅ Acesso a Chats Privados (Com os Maiores Big Players do Digital)\n✅ 5 Ofertas WORLDWIDE (MUNDO TODO) validadas e escaladas por Dia\n✅ Acesso a 1 mês grátis a Moz Swipe\n✅ 100 Modelos de página de vendas WordPress (Nichos Variados)\n✅ 5 Ofertas BR validadas e escaladas por dia\n✅ 2 Modelos de página de vendas que usei para fazer 6 dígitos com cada (1 VSL e 1 Lowticket)\n✅ Script estilo "validado" para quem vai rodar HOT (em zip)\n✅ Script E-commerce (estilo Shopify, mas em zip)\n✅ Acesso a rateios ilimitados (Adsparo Premium, Gamma App Pro, Canva Pro e entre outros)\n\n🔗 Acesso aqui: ${NM_LINK}`;
   const nmOfertaUrl = `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(nmOfertaMsg)}`;
 
