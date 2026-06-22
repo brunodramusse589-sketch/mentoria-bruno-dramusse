@@ -124,6 +124,7 @@ function Dashboard() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Session | null>(null);
   const [tab, setTab] = useState<"leads" | "mensagens">("leads");
+  const [msgFilter, setMsgFilter] = useState<MsgType | "all">("all");
   const [contacted, setContacted] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem("mentoria_contacted");
@@ -316,16 +317,31 @@ function Dashboard() {
       </div>
 
       <div className="p-6 space-y-6">
-        {tab === "mensagens" && (
+        {tab === "mensagens" && (() => {
+          const visibleMsgs = msgFilter === "all" ? sentMessages : sentMessages.filter(m => m.type === msgFilter);
+          const chips: { type: MsgType | "all"; label: string; color: string; count: number }[] = [
+            { type: "all", label: "Todas", color: "bg-white/40", count: sentMessages.length },
+            { type: "individual", label: "Mentoria Individual", color: "bg-green-500", count: sentMessages.filter(m => m.type === "individual").length },
+            { type: "network_master", label: "Network Master", color: "bg-white/40", count: sentMessages.filter(m => m.type === "network_master").length },
+            { type: "reengajamento", label: "Reengajamento", color: "bg-yellow-400", count: sentMessages.filter(m => m.type === "reengajamento").length },
+          ];
+          return (
           <div className="space-y-3">
             {sentMessages.length === 0 ? (
               <p className="text-white/40 text-sm py-8 text-center">Nenhuma mensagem enviada ainda. Clica num botão da dashboard para registar.</p>
             ) : (
               <>
-                <div className="flex gap-3 flex-wrap text-xs text-white/50">
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500 inline-block"/> Mentoria Individual ({sentMessages.filter(m => m.type === "individual").length})</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-white/40 inline-block"/> Network Master ({sentMessages.filter(m => m.type === "network_master").length})</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block"/> Reengajamento ({sentMessages.filter(m => m.type === "reengajamento").length})</span>
+                <div className="flex gap-2 flex-wrap">
+                  {chips.map(c => (
+                    <button
+                      key={c.type}
+                      onClick={() => setMsgFilter(c.type)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${msgFilter === c.type ? "border-white/40 bg-white/10 text-white" : "border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/5 hover:text-white/70"}`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${c.color} inline-block`}/>
+                      {c.label} ({c.count})
+                    </button>
+                  ))}
                 </div>
                 <div className="rounded-xl border border-white/10 overflow-hidden">
                   <table className="w-full text-sm">
@@ -338,7 +354,7 @@ function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sentMessages.map((m) => (
+                      {visibleMsgs.map((m) => (
                         <tr key={m.uid} className="border-t border-white/5 hover:bg-white/5">
                           <td className="px-4 py-3 text-white/50 text-xs whitespace-nowrap">
                             {new Date(m.sentAt).toLocaleString("pt-BR")}
@@ -358,7 +374,8 @@ function Dashboard() {
               </>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {tab === "leads" && <>
         {/* Stats */}
