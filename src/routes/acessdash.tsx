@@ -127,33 +127,66 @@ function Dashboard() {
   const [selected, setSelected] = useState<Session | null>(null);
   const [tab, setTab] = useState<"leads" | "mensagens" | "financeiro">("leads");
   const [msgFilter, setMsgFilter] = useState<MsgType | "all">("all");
-  const [pagamentos, setPagamentos] = useState<Pagamento[]>(() => {
-    try {
-      const stored = localStorage.getItem("mentoria_pagamentos");
-      return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
-  });
-  const [contacted, setContacted] = useState<Set<string>>(() => {
-    try {
-      const stored = localStorage.getItem("mentoria_contacted");
-      return new Set(stored ? JSON.parse(stored) : []);
-    } catch { return new Set(); }
-  });
-  const [sentMessages, setSentMessages] = useState<SentMsg[]>(() => {
-    try {
-      const stored = localStorage.getItem("mentoria_sent_messages");
-      return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
-  });
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
+  const [contacted, setContacted] = useState<Set<string>>(new Set());
+  const [sentMessages, setSentMessages] = useState<SentMsg[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const toggleContacted = (id: string, value?: boolean) => {
+  // Carrega dados do Supabase e migra localStorage se necessário
+  useEffect(() => {
+    const sb = supabase as any;
+    const load = async () => {
+      const [{ data: msgs }, { data: cont }, { data: pags }] = await Promise.all([
+        sb.from("dashboard_msgs").select("*").order("sent_at", { ascending: false }),
+        sb.from("dashboard_contacted").select("session_id"),
+        sb.from("dashboard_pagamentos").select("*").order("paid_at", { ascending: false }),
+      ]);
+
+      const hasSupa = (msgs?.length ?? 0) > 0 || (cont?.length ?? 0) > 0 || (pags?.length ?? 0) > 0;
+
+      if (hasSupa) {
+        if (msgs) setSentMessages(msgs.map((m: any) => ({ uid: m.uid, sessionId: m.session_id, nome: m.nome, phone: m.phone, type: m.type as MsgType, sentAt: m.sent_at })));
+        if (cont) setContacted(new Set(cont.map((c: any) => c.session_id)));
+        if (pags) setPagamentos(pags.map((p: any) => ({ uid: p.uid, sessionId: p.session_id, nome: p.nome ?? "", phone: p.phone ?? "", tipo: p.tipo as MsgType, paidAt: p.paid_at, valor: p.valor ?? "" })));
+      } else {
+        // Migrar de localStorage para Supabase (apenas uma vez)
+        try {
+          const localMsgs: SentMsg[] = JSON.parse(localStorage.getItem("mentoria_sent_messages") ?? "[]");
+          const localCont: string[] = JSON.parse(localStorage.getItem("mentoria_contacted") ?? "[]");
+          const localPags: Pagamento[] = JSON.parse(localStorage.getItem("mentoria_pagamentos") ?? "[]");
+          if (localMsgs.length > 0) {
+            await sb.from("dashboard_msgs").insert(localMsgs.map((m: SentMsg) => ({ uid: m.uid, session_id: m.sessionId, nome: m.nome, phone: m.phone, type: m.type, sent_at: m.sentAt })));
+            setSentMessages(localMsgs);
+          }
+          if (localCont.length > 0) {
+            await sb.from("dashboard_contacted").insert(localCont.map((id: string) => ({ session_id: id })));
+            setContacted(new Set(localCont));
+          }
+          if (localPags.length > 0) {
+            await sb.from("dashboard_pagamentos").insert(localPags.map((p: Pagamento) => ({ uid: p.uid, session_id: p.sessionId, nome: p.nome, phone: p.phone, tipo: p.tipo, paid_at: p.paidAt, valor: p.valor })));
+            setPagamentos(localPags);
+          }
+        } catch {}
+      }
+      setDataLoaded(true);
+    };
+    load();
+  }, []);
+
+  const toggleContacted = async (id: string, value?: boolean) => {
+    const sb = supabase as any;
     setContacted(prev => {
       const next = new Set(prev);
       const newVal = value !== undefined ? value : !next.has(id);
       newVal ? next.add(id) : next.delete(id);
-      localStorage.setItem("mentoria_contacted", JSON.stringify([...next]));
       return next;
     });
+    const willAdd = value !== undefined ? value : !contacted.has(id);
+    if (willAdd) {
+      await sb.from("dashboard_contacted").upsert({ session_id: id });
+    } else {
+      await sb.from("dashboard_contacted").delete().eq("session_id", id);
+    }
   };
 
   const paidIds = useMemo(() => new Set(pagamentos.map(p => p.sessionId)), [pagamentos]);
@@ -164,13 +197,11 @@ function Dashboard() {
     reengajamento: 0,
   };
 
-  const togglePago = (msg: SentMsg) => {
+  const togglePago = async (msg: SentMsg) => {
+    const sb = supabase as any;
     if (paidIds.has(msg.sessionId)) {
-      setPagamentos(prev => {
-        const next = prev.filter(p => p.sessionId !== msg.sessionId);
-        localStorage.setItem("mentoria_pagamentos", JSON.stringify(next));
-        return next;
-      });
+      setPagamentos(prev => prev.filter(p => p.sessionId !== msg.sessionId));
+      await sb.from("dashboard_pagamentos").delete().eq("session_id", msg.sessionId);
     } else {
       const preco = PRECOS[msg.type];
       const valorDefault = preco > 0 ? `${preco.toLocaleString("pt-BR")} MZN` : "";
@@ -185,11 +216,8 @@ function Dashboard() {
         paidAt: new Date().toISOString(),
         valor,
       };
-      setPagamentos(prev => {
-        const next = [entry, ...prev];
-        localStorage.setItem("mentoria_pagamentos", JSON.stringify(next));
-        return next;
-      });
+      setPagamentos(prev => [entry, ...prev]);
+      await sb.from("dashboard_pagamentos").insert({ uid: entry.uid, session_id: entry.sessionId, nome: entry.nome, phone: entry.phone, tipo: entry.tipo, paid_at: entry.paidAt, valor: entry.valor });
     }
   };
 
@@ -278,21 +306,19 @@ function Dashboard() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const recordMessage = (session: Session, type: MsgType) => {
+  const recordMessage = async (session: Session, type: MsgType) => {
+    const sb = supabase as any;
     toggleContacted(session.id, true);
-    setSentMessages(prev => {
-      const entry: SentMsg = {
-        uid: crypto.randomUUID(),
-        sessionId: session.id,
-        nome: session.nome ?? "Sem nome",
-        phone: session.whatsapp ?? "",
-        type,
-        sentAt: new Date().toISOString(),
-      };
-      const next = [entry, ...prev];
-      localStorage.setItem("mentoria_sent_messages", JSON.stringify(next));
-      return next;
-    });
+    const entry: SentMsg = {
+      uid: crypto.randomUUID(),
+      sessionId: session.id,
+      nome: session.nome ?? "Sem nome",
+      phone: session.whatsapp ?? "",
+      type,
+      sentAt: new Date().toISOString(),
+    };
+    setSentMessages(prev => [entry, ...prev]);
+    await sb.from("dashboard_msgs").insert({ uid: entry.uid, session_id: entry.sessionId, nome: entry.nome, phone: entry.phone, type: entry.type, sent_at: entry.sentAt });
   };
 
   const fetchData = async (isRefresh = false) => {
@@ -317,34 +343,22 @@ function Dashboard() {
     fetchData();
   }, []);
 
-  // Migrate already-contacted sessions into sentMessages if not yet registered
+  // Após carregar dados do Supabase e sessões, migra contactados sem registo de mensagem
   useEffect(() => {
-    if (sessions.length === 0) return;
+    if (!dataLoaded || sessions.length === 0 || contacted.size === 0) return;
+    const sb = supabase as any;
     const registeredIds = new Set(sentMessages.map(m => m.sessionId));
     const toAdd: SentMsg[] = [];
     for (const s of sessions) {
       if (!contacted.has(s.id)) continue;
       if (registeredIds.has(s.id)) continue;
-      const type: MsgType =
-        s.qualified === true ? "individual"
-        : s.qualified === false ? "network_master"
-        : "reengajamento";
-      toAdd.push({
-        uid: crypto.randomUUID(),
-        sessionId: s.id,
-        nome: s.nome ?? "Sem nome",
-        phone: s.whatsapp ?? "",
-        type,
-        sentAt: s.updated_at ?? s.started_at,
-      });
+      const type: MsgType = s.qualified === true ? "individual" : s.qualified === false ? "network_master" : "reengajamento";
+      toAdd.push({ uid: crypto.randomUUID(), sessionId: s.id, nome: s.nome ?? "Sem nome", phone: s.whatsapp ?? "", type, sentAt: s.updated_at ?? s.started_at });
     }
     if (toAdd.length === 0) return;
-    setSentMessages(prev => {
-      const next = [...toAdd, ...prev].sort((a, b) => b.sentAt.localeCompare(a.sentAt));
-      localStorage.setItem("mentoria_sent_messages", JSON.stringify(next));
-      return next;
-    });
-  }, [sessions]);
+    setSentMessages(prev => [...toAdd, ...prev].sort((a, b) => b.sentAt.localeCompare(a.sentAt)));
+    sb.from("dashboard_msgs").insert(toAdd.map((m: SentMsg) => ({ uid: m.uid, session_id: m.sessionId, nome: m.nome, phone: m.phone, type: m.type, sent_at: m.sentAt }))).then(() => {});
+  }, [dataLoaded, sessions]);
 
   const stats = useMemo(() => {
     const total = sessions.length;
