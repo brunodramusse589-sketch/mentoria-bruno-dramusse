@@ -261,29 +261,20 @@ function Dashboard() {
             <table className="w-full text-sm">
               <thead className="bg-white/5 text-left text-xs uppercase text-white/50">
                 <tr>
-                  <th className="px-3 py-3 whitespace-nowrap">Data</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Nome</th>
-                  <th className="px-3 py-3 whitespace-nowrap">WhatsApp</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Instagram</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Como conheceu</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Modelo negócio</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Dificuldade</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Objetivo 90d</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Autodidata</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Caixa</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Dúvidas</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Horários</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Compromisso</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Investimento</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Status</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Contactar</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Data</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Nome</th>
+                  <th className="px-4 py-3 whitespace-nowrap">WhatsApp</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Compromisso</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Investimento</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Contactar</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={16} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={16} className="px-4 py-8 text-center text-white/50">Nenhuma resposta ainda</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-white/50">Nenhuma resposta ainda</td></tr>
                 ) : (
                   filtered.map((s) => (
                     <tr
@@ -291,24 +282,17 @@ function Dashboard() {
                       onClick={() => setSelected(s)}
                       className="border-t border-white/5 hover:bg-white/5 cursor-pointer"
                     >
-                      <td className="px-3 py-3 whitespace-nowrap text-white/60 text-xs">{new Date(s.started_at).toLocaleDateString("pt-BR")}</td>
-                      <td className="px-3 py-3 whitespace-nowrap font-medium">{s.nome ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-white/80 text-xs">{s.whatsapp ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs">{s.instagram ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs">{s.answers?.conheceu ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs">{s.answers?.modelo ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 text-xs max-w-[150px] truncate">{s.answers?.dificuldade ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 text-xs max-w-[150px] truncate">{s.answers?.objetivo ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs">{s.answers?.autodidata ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs">{s.answers?.caixa ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 text-xs max-w-[150px] truncate">{s.answers?.duvidas ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs">{s.answers?.flexivel ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs">{s.answers?.compromisso ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs font-semibold" style={{ color: s.answers?.investimento?.toUpperCase().startsWith("SIM") ? "#22c55e" : s.answers?.investimento === "NÃO" ? "#ef4444" : undefined }}>
+                      <td className="px-4 py-3 whitespace-nowrap text-white/60 text-xs">
+                        {new Date(s.started_at).toLocaleDateString("pt-BR")}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap font-medium">{s.nome ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-white/80">{s.whatsapp ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.compromisso ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold" style={{ color: s.answers?.investimento?.toUpperCase().startsWith("SIM") ? "#22c55e" : s.answers?.investimento === "NÃO" ? "#ef4444" : undefined }}>
                         {s.answers?.investimento ?? <span className="text-white/30 font-normal">—</span>}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap"><StatusBadge session={s} /></td>
-                      <td className="px-3 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-3 whitespace-nowrap"><StatusBadge session={s} /></td>
+                      <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <WhatsAppButton session={s} />
                       </td>
                     </tr>
