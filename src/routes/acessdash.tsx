@@ -193,6 +193,63 @@ function Dashboard() {
     }
   };
 
+  const VAPID_PUBLIC = "BDW_wPT7OpGFzH03DgWlWjCXvrEdc24l2MtUjQoAmT6e-KYW4FgCsyTz5qloTVRBiuoVbqk9Ni2jGUKLyWRdCqk";
+
+  const [notifPerm, setNotifPerm] = useState<NotificationPermission>("default");
+
+  useEffect(() => {
+    if (typeof Notification !== "undefined") setNotifPerm(Notification.permission);
+  }, []);
+
+  const requestNotifPermission = async () => {
+    const perm = await Notification.requestPermission();
+    setNotifPerm(perm);
+    if (perm === "granted") subscribeWebPush();
+  };
+
+  const subscribeWebPush = async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const existing = await reg.pushManager.getSubscription();
+      if (existing) return;
+      await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: VAPID_PUBLIC,
+      });
+    } catch {}
+  };
+
+  const showLocalNotif = (title: string, body: string) => {
+    if (Notification.permission === "granted") {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, { body, icon: "/icon-192.png", ...(({ vibrate: [200, 100, 200] }) as object) } as NotificationOptions);
+      }).catch(() => new Notification(title, { body, icon: "/icon-192.png" }));
+    }
+  };
+
+  // Realtime: notifica quando entra um novo lead
+  useEffect(() => {
+    const channel = supabase
+      .channel("new_leads_notif")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "quiz_sessions" }, (payload) => {
+        const s = payload.new as Session;
+        const nome = s.nome ?? "Alguém";
+        showLocalNotif("Novo lead no formulário", `${nome} começou a preencher.`);
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "quiz_sessions" }, (payload) => {
+        const s = payload.new as Session;
+        if (!s.completed) return;
+        const nome = s.nome ?? "Alguém";
+        const tel = s.whatsapp ?? "";
+        if (s.qualified === true)
+          showLocalNotif("Novo lead qualificado! 🔥", `${nome} (${tel}) disse SIM — Mentoria Individual.`);
+        else if (s.qualified === false)
+          showLocalNotif("Lead para Network Master", `${nome} (${tel}) disse NÃO — Network Master.`);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   const recordMessage = (session: Session, type: MsgType) => {
     toggleContacted(session.id, true);
     setSentMessages(prev => {
@@ -339,6 +396,21 @@ function Dashboard() {
             </svg>
             {refreshing ? "A actualizar..." : "Actualizar"}
           </button>
+          {notifPerm !== "granted" && (
+            <button
+              onClick={requestNotifPermission}
+              className="rounded-lg bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-blue-400 px-3 py-1.5 text-xs flex items-center gap-1.5"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6V11c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+              Activar notificações
+            </button>
+          )}
+          {notifPerm === "granted" && (
+            <span className="rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 px-3 py-1.5 text-xs flex items-center gap-1.5">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Notificações activas
+            </span>
+          )}
           <button onClick={exportCSV} className="rounded-lg bg-white/10 hover:bg-white/15 px-3 py-1.5 text-xs">
             Exportar CSV
           </button>
