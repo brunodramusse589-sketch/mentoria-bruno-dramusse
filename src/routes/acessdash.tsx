@@ -120,6 +120,22 @@ function Dashboard() {
   const [filter, setFilter] = useState<"all" | "completed" | "qualified" | "not_qualified" | "in_progress">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Session | null>(null);
+  const [contacted, setContacted] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem("mentoria_contacted");
+      return new Set(stored ? JSON.parse(stored) : []);
+    } catch { return new Set(); }
+  });
+
+  const toggleContacted = (id: string, value?: boolean) => {
+    setContacted(prev => {
+      const next = new Set(prev);
+      const newVal = value !== undefined ? value : !next.has(id);
+      newVal ? next.add(id) : next.delete(id);
+      localStorage.setItem("mentoria_contacted", JSON.stringify([...next]));
+      return next;
+    });
+  };
 
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -280,19 +296,20 @@ function Dashboard() {
                   <th className="px-4 py-3 whitespace-nowrap">Investimento</th>
                   <th className="px-4 py-3 whitespace-nowrap">Status</th>
                   <th className="px-4 py-3 whitespace-nowrap">Contactar</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Contactado</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-white/50">Nenhuma resposta ainda</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-8 text-center text-white/50">Nenhuma resposta ainda</td></tr>
                 ) : (
                   filtered.map((s) => (
                     <tr
                       key={s.id}
                       onClick={() => setSelected(s)}
-                      className="border-t border-white/5 hover:bg-white/5 cursor-pointer"
+                      className={`border-t border-white/5 hover:bg-white/5 cursor-pointer transition-colors ${contacted.has(s.id) ? "bg-green-500/5" : ""}`}
                     >
                       <td className="px-4 py-3 whitespace-nowrap text-white/60 text-xs">
                         {new Date(s.started_at).toLocaleDateString("pt-BR")}
@@ -305,7 +322,21 @@ function Dashboard() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap"><StatusBadge session={s} /></td>
                       <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <WhatsAppButton session={s} />
+                        <WhatsAppButton session={s} onContact={() => toggleContacted(s.id, true)} />
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => toggleContacted(s.id)}
+                          className="flex items-center justify-center w-7 h-7 rounded-full border transition-colors"
+                          style={contacted.has(s.id) ? { background: "#22c55e22", borderColor: "#22c55e" } : { background: "transparent", borderColor: "rgba(255,255,255,0.15)" }}
+                          title={contacted.has(s.id) ? "Marcar como não contactado" : "Marcar como contactado"}
+                        >
+                          {contacted.has(s.id) && (
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          )}
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -341,7 +372,7 @@ function StatusBadge({ session }: { session: Session }) {
   return <span className="rounded-md bg-white/10 text-white/50 px-2 py-0.5 text-xs">Abriu</span>;
 }
 
-function WhatsAppButton({ session }: { session: Session }) {
+function WhatsAppButton({ session, onContact }: { session: Session; onContact?: () => void }) {
   const nome = session.nome ?? "você";
   const phone = (session.whatsapp ?? "").replace(/\D/g, "");
   if (!phone) return <span className="text-white/20 text-xs">sem número</span>;
@@ -364,6 +395,7 @@ function WhatsAppButton({ session }: { session: Session }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => onContact?.()}
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-transform hover:scale-105 active:scale-95 ${
         isQualified
           ? "bg-[#22c55e]/20 text-[#22c55e] hover:bg-[#22c55e]/30"
