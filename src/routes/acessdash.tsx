@@ -199,6 +199,14 @@ function Dashboard() {
 
   const [notifPerm, setNotifPerm] = useState<NotificationPermission>("default");
   const [showNotifBanner, setShowNotifBanner] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email ?? null);
+    });
+  }, []);
 
   useEffect(() => {
     if (typeof Notification === "undefined") return;
@@ -440,11 +448,116 @@ function Dashboard() {
           <button onClick={exportCSV} className="rounded-lg bg-white/10 hover:bg-white/15 px-3 py-1.5 text-xs hidden sm:flex items-center">
             Exportar CSV
           </button>
-          <button onClick={() => supabase.auth.signOut()} className="rounded-lg bg-white/10 hover:bg-white/15 px-3 py-1.5 text-xs">
-            Sair
+          <button
+            onClick={() => setShowSettings(true)}
+            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/15 flex items-center justify-center"
+            title="Definições"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
           </button>
         </div>
       </header>
+
+      {/* Painel de Definições */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
+          {/* Painel lateral direito */}
+          <div className="absolute right-0 top-0 h-full w-80 max-w-full bg-[#111] border-l border-white/10 flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <h2 className="font-semibold text-base">Definições</h2>
+              <button onClick={() => setShowSettings(false)} className="text-white/40 hover:text-white text-xl leading-none">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+
+              {/* Conta */}
+              <section>
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Conta</p>
+                <div className="bg-white/5 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-lg">
+                      B
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Bruno Dramusse</p>
+                      <p className="text-xs text-white/40">{userEmail ?? "—"}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { supabase.auth.signOut(); setShowSettings(false); }}
+                    className="w-full rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 py-2 text-sm"
+                  >
+                    Terminar sessão
+                  </button>
+                </div>
+              </section>
+
+              {/* Notificações */}
+              <section>
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Notificações</p>
+                <div className="bg-white/5 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Notificações push</p>
+                      <p className="text-xs text-white/40">Avisos de novos leads</p>
+                    </div>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                      notifPerm === "granted"
+                        ? "bg-green-500/15 text-green-400 border border-green-500/20"
+                        : notifPerm === "denied"
+                        ? "bg-red-500/15 text-red-400 border border-red-500/20"
+                        : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20"
+                    }`}>
+                      {notifPerm === "granted" ? "Activas" : notifPerm === "denied" ? "Bloqueadas" : "Pendente"}
+                    </span>
+                  </div>
+                  {notifPerm === "granted" ? (
+                    <div className="flex items-center gap-2 text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      Receberás notificações mesmo com o app fechado
+                    </div>
+                  ) : notifPerm === "denied" ? (
+                    <p className="text-xs text-white/40">Vai às Definições do iPhone → Notificações → Mentoria BD e activa.</p>
+                  ) : (
+                    <button
+                      onClick={() => { requestNotifPermission(); }}
+                      className="w-full rounded-lg bg-blue-500 hover:bg-blue-600 text-white py-2 text-sm font-medium"
+                    >
+                      Activar notificações
+                    </button>
+                  )}
+                  <div className="border-t border-white/10 pt-3">
+                    <p className="text-xs text-white/40 mb-1">Para notificações em background:</p>
+                    <p className="text-xs text-white/30">Partilha → "Adicionar ao ecrã inicial" no Safari do iPhone</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Exportar */}
+              <section>
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Dados</p>
+                <div className="bg-white/5 rounded-xl p-4">
+                  <button onClick={() => { exportCSV(); setShowSettings(false); }} className="w-full rounded-lg bg-white/10 hover:bg-white/15 py-2 text-sm">
+                    Exportar leads (CSV)
+                  </button>
+                </div>
+              </section>
+
+              {/* Info */}
+              <section>
+                <div className="text-center text-xs text-white/20 pt-2">
+                  <p>Mentoria Bruno Dramusse</p>
+                  <p>Dashboard v2.0</p>
+                </div>
+              </section>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b border-white/10 px-6 flex gap-1">
