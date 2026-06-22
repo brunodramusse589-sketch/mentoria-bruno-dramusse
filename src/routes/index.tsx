@@ -248,9 +248,9 @@ function Index() {
   const wasCompletionNotifRef = useRef(false);
 
   const PUSHCUT = {
-    individual: "https://api.pushcut.io/tJiLz1JoTuyyofrIG9JGh/notifications/Mentoria%20Bruno%20Dramusse%20-%20Individual%20",
-    networkMaster: "https://api.pushcut.io/tJiLz1JoTuyyofrIG9JGh/notifications/Network%20Master%20",
-    naoUltimou: "https://api.pushcut.io/tJiLz1JoTuyyofrIG9JGh/notifications/N%C3%A3o%20ultimou%20de%20preencher%20",
+    individual: "https://api.pushcut.io/Ir8FlE6V28K1sGz6v6CHf/notifications/Mentoria%20Individual%20",
+    networkMaster: "https://api.pushcut.io/Ir8FlE6V28K1sGz6v6CHf/notifications/Network%20Master",
+    naoUltimou: "https://api.pushcut.io/Ir8FlE6V28K1sGz6v6CHf/notifications/N%C3%A3o%20finalizou%20",
   };
 
   const notifyPushcut = (url: string, title: string, text: string) => {
