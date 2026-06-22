@@ -18,9 +18,23 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
+  // Usa cookies para partilhar sessão entre Safari e PWA (ecrã inicial)
+  const cookieStorage = typeof window !== 'undefined' ? {
+    getItem: (key: string): string | null => {
+      const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${encodeURIComponent(key)}=([^;]*)`));
+      return match ? decodeURIComponent(match[1]) : null;
+    },
+    setItem: (key: string, value: string) => {
+      document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(value)}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+    },
+    removeItem: (key: string) => {
+      document.cookie = `${encodeURIComponent(key)}=; path=/; max-age=0`;
+    },
+  } : undefined;
+
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
-      storage: typeof window !== 'undefined' ? localStorage : undefined,
+      storage: cookieStorage,
       persistSession: true,
       autoRefreshToken: true,
     }

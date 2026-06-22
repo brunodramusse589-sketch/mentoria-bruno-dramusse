@@ -72,40 +72,63 @@ function AcessDash() {
 
 
   if (authed === null) {
-    return <div className="min-h-screen bg-black text-white grid place-items-center">Carregando...</div>;
+    return (
+      <div className="min-h-screen bg-white grid place-items-center">
+        <div className="w-10 h-10 rounded-full border-4 border-[#10b981] border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
   if (!authed) {
     return (
-      <div className="min-h-screen bg-black text-white grid place-items-center px-4">
-        <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h1 className="text-xl font-semibold">Dashboard — Acesso</h1>
-          <p className="text-sm text-white/60">Entre para ver as respostas.</p>
-          <input
-            type="email"
-            required
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg bg-black/40 border border-white/15 px-3 py-2 text-sm outline-none focus:border-white/40"
-          />
-          <input
-            type="password"
-            required
-            placeholder="Senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg bg-black/40 border border-white/15 px-3 py-2 text-sm outline-none focus:border-white/40"
-          />
-          {authError && <p className="text-sm text-red-400">{authError}</p>}
+      <div className="min-h-screen bg-white grid place-items-center px-6">
+        <form onSubmit={submit} className="w-full max-w-sm space-y-5">
+          {/* Ícone */}
+          <div className="w-14 h-14 rounded-2xl bg-[#10b981] flex items-center justify-center mb-2">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Bem-vindo de volta</h1>
+            <p className="text-sm text-gray-500 mt-1">Gerencie seus leads e pagamentos.</p>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Email</label>
+              <input
+                type="email"
+                required
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl bg-gray-100 border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all text-gray-900 placeholder-gray-400"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Senha</label>
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl bg-gray-100 border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all text-gray-900 placeholder-gray-400"
+              />
+            </div>
+          </div>
+          {authError && (
+            <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600">
+              {authError}
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-white text-black font-medium py-2 text-sm disabled:opacity-50"
+            className="w-full rounded-xl bg-[#10b981] hover:bg-[#059669] text-white font-semibold py-3.5 text-sm disabled:opacity-60 transition-colors"
           >
-            {loading ? "Aguarde..." : "Entrar"}
+            {loading ? "A entrar..." : "Entrar na conta"}
           </button>
-
         </form>
       </div>
     );
