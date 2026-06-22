@@ -115,30 +115,31 @@ function AcessDash() {
 function Dashboard() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<"all" | "completed" | "qualified" | "not_qualified" | "in_progress">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Session | null>(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("quiz_sessions")
-      .select("*")
-      .order("started_at", { ascending: false })
-      .limit(2000);
-    setSessions((data as Session[] | null) ?? []);
-    setLoading(false);
+  const fetchData = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    try {
+      const { data } = await supabase
+        .from("quiz_sessions")
+        .select("*")
+        .order("started_at", { ascending: false })
+        .limit(2000);
+      setSessions((data as Session[] | null) ?? []);
+    } catch (e) {
+      console.error("Erro ao carregar dados:", e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => {
     fetchData();
-    const channel = supabase
-      .channel("quiz_sessions_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "quiz_sessions" }, () => fetchData())
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const stats = useMemo(() => {
@@ -209,6 +210,16 @@ function Dashboard() {
           <p className="text-xs text-white/50">Acompanhamento em tempo real das candidaturas</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchData(true)}
+            disabled={refreshing}
+            className="rounded-lg bg-white/10 hover:bg-white/15 px-3 py-1.5 text-xs disabled:opacity-50 flex items-center gap-1.5"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={refreshing ? "animate-spin" : ""}>
+              <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+            </svg>
+            {refreshing ? "A actualizar..." : "Actualizar"}
+          </button>
           <button onClick={exportCSV} className="rounded-lg bg-white/10 hover:bg-white/15 px-3 py-1.5 text-xs">
             Exportar CSV
           </button>
