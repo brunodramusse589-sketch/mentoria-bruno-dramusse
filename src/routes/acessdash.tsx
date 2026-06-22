@@ -358,7 +358,7 @@ function WhatsAppButton({ session }: { session: Session }) {
     return <span className="text-white/20 text-xs">—</span>;
   }
 
-  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  const url = `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
   return (
     <a
       href={url}
