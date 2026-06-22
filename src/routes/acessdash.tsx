@@ -186,6 +186,35 @@ function Dashboard() {
     fetchData();
   }, []);
 
+  // Migrate already-contacted sessions into sentMessages if not yet registered
+  useEffect(() => {
+    if (sessions.length === 0) return;
+    const registeredIds = new Set(sentMessages.map(m => m.sessionId));
+    const toAdd: SentMsg[] = [];
+    for (const s of sessions) {
+      if (!contacted.has(s.id)) continue;
+      if (registeredIds.has(s.id)) continue;
+      const type: MsgType =
+        s.qualified === true ? "individual"
+        : s.qualified === false ? "network_master"
+        : "reengajamento";
+      toAdd.push({
+        uid: crypto.randomUUID(),
+        sessionId: s.id,
+        nome: s.nome ?? "Sem nome",
+        phone: s.whatsapp ?? "",
+        type,
+        sentAt: s.updated_at ?? s.started_at,
+      });
+    }
+    if (toAdd.length === 0) return;
+    setSentMessages(prev => {
+      const next = [...toAdd, ...prev].sort((a, b) => b.sentAt.localeCompare(a.sentAt));
+      localStorage.setItem("mentoria_sent_messages", JSON.stringify(next));
+      return next;
+    });
+  }, [sessions]);
+
   const stats = useMemo(() => {
     const total = sessions.length;
     const completed = sessions.filter((s) => s.completed).length;
