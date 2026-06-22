@@ -246,6 +246,7 @@ function Index() {
   const wasCompletedRef = useRef(false);
   const wasWhatsappNotifRef = useRef(false);
   const wasCompletionNotifRef = useRef(false);
+  const abandonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const PUSHCUT = {
     individual: "https://api.pushcut.io/Ir8FlE6V28K1sGz6v6CHf/notifications/Mentoria%20Individual%20",
@@ -349,16 +350,26 @@ function Index() {
       }).catch(() => {});
     }
 
-    // Pushcut — notificar quando WhatsApp é submetido (não ultimou)
     const whatsapp = answers["whatsapp"];
     const nome = answers["nome"] ?? "Alguém";
-    if (whatsapp && !wasWhatsappNotifRef.current) {
-      wasWhatsappNotifRef.current = true;
-      notifyPushcut(
-        PUSHCUT.naoUltimou,
-        "Formulário em progresso",
-        `${nome} (${whatsapp}) começou a preencher mas ainda não terminou.`
-      );
+
+    // Pushcut — timer de abandono: reinicia a cada passo após ter WhatsApp, cancela se completar
+    if (isCompleted) {
+      if (abandonTimerRef.current) {
+        clearTimeout(abandonTimerRef.current);
+        abandonTimerRef.current = null;
+      }
+    } else if (whatsapp) {
+      if (abandonTimerRef.current) clearTimeout(abandonTimerRef.current);
+      abandonTimerRef.current = setTimeout(() => {
+        if (!wasCompletionNotifRef.current) {
+          notifyPushcut(
+            PUSHCUT.naoUltimou,
+            "Lead abandonou o formulário",
+            `${nome} (${whatsapp}) ficou 5 minutos sem finalizar — precisa de ser resgatado.`
+          );
+        }
+      }, 5 * 60 * 1000);
     }
 
     // Pushcut — notificar quando completa o formulário (SIM ou NÃO)
@@ -380,6 +391,11 @@ function Index() {
     }
 
   }, [index, answers, localId]);
+
+  // Limpar timer ao sair da página
+  useEffect(() => {
+    return () => { if (abandonTimerRef.current) clearTimeout(abandonTimerRef.current); };
+  }, []);
 
   const isLast = index === steps.length - 2; // last interactive before thanks
   const total = steps.length - 2; // exclude intro + thanks
