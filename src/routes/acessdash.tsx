@@ -371,7 +371,7 @@ function Dashboard() {
           const chips: { type: MsgType | "all"; label: string; color: string; count: number }[] = [
             { type: "all", label: "Todas", color: "bg-white/40", count: sentMessages.length },
             { type: "individual", label: "Mentoria Individual", color: "bg-green-500", count: sentMessages.filter(m => m.type === "individual").length },
-            { type: "network_master", label: "Network Master", color: "bg-white/40", count: sentMessages.filter(m => m.type === "network_master").length },
+            { type: "network_master", label: "Network Master", color: "bg-blue-400", count: sentMessages.filter(m => m.type === "network_master").length },
             { type: "reengajamento", label: "Reengajamento", color: "bg-yellow-400", count: sentMessages.filter(m => m.type === "reengajamento").length },
           ];
           return (
@@ -413,7 +413,7 @@ function Dashboard() {
                           <td className="px-4 py-3 text-white/70 whitespace-nowrap">{m.phone}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {m.type === "individual" && <span className="rounded-full bg-green-500/15 text-green-400 px-2.5 py-1 text-xs font-medium">Mentoria Individual</span>}
-                            {m.type === "network_master" && <span className="rounded-full bg-white/10 text-white/70 px-2.5 py-1 text-xs font-medium">Network Master</span>}
+                            {m.type === "network_master" && <span className="rounded-full bg-blue-500/15 text-blue-400 px-2.5 py-1 text-xs font-medium">Network Master</span>}
                             {m.type === "reengajamento" && <span className="rounded-full bg-yellow-500/15 text-yellow-400 px-2.5 py-1 text-xs font-medium">Reengajamento</span>}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
@@ -452,7 +452,7 @@ function Dashboard() {
           // Pie chart data
           const pieData = [
             { name: "Mentoria Individual", value: nIndividual, color: "#22c55e" },
-            { name: "Network Master", value: nNM, color: "#a3a3a3" },
+            { name: "Network Master", value: nNM, color: "#3b82f6" },
           ].filter(d => d.value > 0);
 
           // Bar chart: pagamentos por dia (últimos 14 dias)
@@ -499,7 +499,7 @@ function Dashboard() {
                         <YAxis tick={{ fill: "#ffffff55", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
                         <Tooltip contentStyle={{ background: "#111", border: "1px solid #ffffff15", borderRadius: 8, color: "#fff", fontSize: 12 }} />
                         <Bar dataKey="Individual" name="Mentoria Individual" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="NM" name="Network Master" fill="#a3a3a3" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="NM" name="Network Master" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -547,7 +547,7 @@ function Dashboard() {
                           <td className="px-4 py-3 text-white/70 whitespace-nowrap">{p.phone}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {p.tipo === "individual" && <span className="rounded-full bg-green-500/15 text-green-400 px-2.5 py-1 text-xs font-medium">Mentoria Individual</span>}
-                            {p.tipo === "network_master" && <span className="rounded-full bg-white/10 text-white/70 px-2.5 py-1 text-xs font-medium">Network Master</span>}
+                            {p.tipo === "network_master" && <span className="rounded-full bg-blue-500/15 text-blue-400 px-2.5 py-1 text-xs font-medium">Network Master</span>}
                             {p.tipo === "reengajamento" && <span className="rounded-full bg-yellow-500/15 text-yellow-400 px-2.5 py-1 text-xs font-medium">Reengajamento</span>}
                           </td>
                           <td className="px-4 py-3 font-semibold text-emerald-400 whitespace-nowrap">{p.valor || <span className="text-white/30 font-normal">—</span>}</td>
@@ -725,7 +725,7 @@ function WhatsAppButton({ session, onContact }: { session: Session; onContact?: 
   } else if (isNotQualified) {
     msg = `Opa! ${nome}, tudo bem? Aqui é o Bruno Dramusse. Vi que preencheste o formulário da Mentoria Individual. Entendo que o investimento pode estar além do alcance agora, mas tenho a solução certa para ti: o *Network Master*. Por uma fração do valor aprendes o método completo, generates os teus primeiros resultados e constróis o caixa. Depois é só fazer o upgrade para a Mentoria Individual e triplicar os teus ganhos. Queres saber mais?`;
     btnLabel = "Network Master";
-    btnClass = "bg-white/10 text-white/70 hover:bg-white/20";
+    btnClass = "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30";
     msgType = "network_master";
   } else if (isInProgress) {
     msg = `Opa! ${nome}, tudo bem? Aqui é o Bruno Dramusse. Vi que começaste a preencher o formulário da Mentoria Individual mas não chegaste ao fim. Queria perceber o que te levou a parar, podes partilhar? Estou aqui para ajudar e, dependendo da tua situação, posso ter uma proposta que se encaixe no teu momento actual.`;
