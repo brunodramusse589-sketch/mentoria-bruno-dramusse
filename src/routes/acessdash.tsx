@@ -113,6 +113,9 @@ function AcessDash() {
   return <Dashboard />;
 }
 
+type MsgType = "individual" | "network_master" | "reengajamento";
+type SentMsg = { uid: string; sessionId: string; nome: string; phone: string; type: MsgType; sentAt: string };
+
 function Dashboard() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,11 +123,18 @@ function Dashboard() {
   const [filter, setFilter] = useState<"all" | "completed" | "qualified" | "not_qualified" | "in_progress">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Session | null>(null);
+  const [tab, setTab] = useState<"leads" | "mensagens">("leads");
   const [contacted, setContacted] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem("mentoria_contacted");
       return new Set(stored ? JSON.parse(stored) : []);
     } catch { return new Set(); }
+  });
+  const [sentMessages, setSentMessages] = useState<SentMsg[]>(() => {
+    try {
+      const stored = localStorage.getItem("mentoria_sent_messages");
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
   });
 
   const toggleContacted = (id: string, value?: boolean) => {
@@ -133,6 +143,23 @@ function Dashboard() {
       const newVal = value !== undefined ? value : !next.has(id);
       newVal ? next.add(id) : next.delete(id);
       localStorage.setItem("mentoria_contacted", JSON.stringify([...next]));
+      return next;
+    });
+  };
+
+  const recordMessage = (session: Session, type: MsgType) => {
+    toggleContacted(session.id, true);
+    setSentMessages(prev => {
+      const entry: SentMsg = {
+        uid: crypto.randomUUID(),
+        sessionId: session.id,
+        nome: session.nome ?? "Sem nome",
+        phone: session.whatsapp ?? "",
+        type,
+        sentAt: new Date().toISOString(),
+      };
+      const next = [entry, ...prev];
+      localStorage.setItem("mentoria_sent_messages", JSON.stringify(next));
       return next;
     });
   };
@@ -246,7 +273,65 @@ function Dashboard() {
         </div>
       </header>
 
+      {/* Tabs */}
+      <div className="border-b border-white/10 px-6 flex gap-1">
+        {(["leads", "mensagens"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t ? "border-white text-white" : "border-transparent text-white/40 hover:text-white/70"}`}
+          >
+            {t === "leads" ? `Leads (${sessions.length})` : `Mensagens (${sentMessages.length})`}
+          </button>
+        ))}
+      </div>
+
       <div className="p-6 space-y-6">
+        {tab === "mensagens" && (
+          <div className="space-y-3">
+            {sentMessages.length === 0 ? (
+              <p className="text-white/40 text-sm py-8 text-center">Nenhuma mensagem enviada ainda. Clica num botão da dashboard para registar.</p>
+            ) : (
+              <>
+                <div className="flex gap-3 flex-wrap text-xs text-white/50">
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500 inline-block"/> Mentoria Individual ({sentMessages.filter(m => m.type === "individual").length})</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-white/40 inline-block"/> Network Master ({sentMessages.filter(m => m.type === "network_master").length})</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block"/> Reengajamento ({sentMessages.filter(m => m.type === "reengajamento").length})</span>
+                </div>
+                <div className="rounded-xl border border-white/10 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-white/5 text-left text-xs uppercase text-white/50">
+                      <tr>
+                        <th className="px-4 py-3">Hora</th>
+                        <th className="px-4 py-3">Nome</th>
+                        <th className="px-4 py-3">WhatsApp</th>
+                        <th className="px-4 py-3">Tipo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sentMessages.map((m) => (
+                        <tr key={m.uid} className="border-t border-white/5 hover:bg-white/5">
+                          <td className="px-4 py-3 text-white/50 text-xs whitespace-nowrap">
+                            {new Date(m.sentAt).toLocaleString("pt-BR")}
+                          </td>
+                          <td className="px-4 py-3 font-medium whitespace-nowrap">{m.nome}</td>
+                          <td className="px-4 py-3 text-white/70 whitespace-nowrap">{m.phone}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {m.type === "individual" && <span className="rounded-full bg-green-500/15 text-green-400 px-2.5 py-1 text-xs font-medium">Mentoria Individual</span>}
+                            {m.type === "network_master" && <span className="rounded-full bg-white/10 text-white/70 px-2.5 py-1 text-xs font-medium">Network Master</span>}
+                            {m.type === "reengajamento" && <span className="rounded-full bg-yellow-500/15 text-yellow-400 px-2.5 py-1 text-xs font-medium">Reengajamento</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {tab === "leads" && <>
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <StatCard label="Total" value={stats.total} color="white" onClick={() => setFilter("all")} active={filter === "all"} />
@@ -322,7 +407,7 @@ function Dashboard() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap"><StatusBadge session={s} /></td>
                       <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <WhatsAppButton session={s} onContact={() => toggleContacted(s.id, true)} />
+                        <WhatsAppButton session={s} onContact={(type) => recordMessage(s, type)} />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <button
@@ -345,6 +430,7 @@ function Dashboard() {
             </table>
           </div>
         </div>
+        </>}
       </div>
 
       {selected && <DetailDrawer session={selected} onClose={() => setSelected(null)} />}
@@ -372,7 +458,7 @@ function StatusBadge({ session }: { session: Session }) {
   return <span className="rounded-md bg-white/10 text-white/50 px-2 py-0.5 text-xs">Abriu</span>;
 }
 
-function WhatsAppButton({ session, onContact }: { session: Session; onContact?: () => void }) {
+function WhatsAppButton({ session, onContact }: { session: Session; onContact?: (type: MsgType) => void }) {
   const nome = session.nome ?? "você";
   const phone = (session.whatsapp ?? "").replace(/\D/g, "");
   if (!phone) return <span className="text-white/20 text-xs">sem número</span>;
@@ -385,18 +471,22 @@ function WhatsAppButton({ session, onContact }: { session: Session; onContact?: 
   let btnLabel = "";
   let btnClass = "";
 
+  let msgType: MsgType = "individual";
   if (isQualified) {
     msg = `Opa! ${nome}, tudo bem? Aqui é o Bruno Dramusse. Vi que preencheste o formulário da Mentoria Individual e estás pronto para investir no teu crescimento. Quero agendar uma call contigo para alinharmos tudo antes de fecharmos. Qual o melhor horário para ti?`;
     btnLabel = "Agendar call";
     btnClass = "bg-[#22c55e]/20 text-[#22c55e] hover:bg-[#22c55e]/30";
+    msgType = "individual";
   } else if (isNotQualified) {
     msg = `Opa! ${nome}, tudo bem? Aqui é o Bruno Dramusse. Vi que preencheste o formulário da Mentoria Individual. Entendo que o investimento pode estar além do alcance agora, mas tenho a solução certa para ti: o *Network Master*. Por uma fração do valor aprendes o método completo, generates os teus primeiros resultados e constróis o caixa. Depois é só fazer o upgrade para a Mentoria Individual e triplicar os teus ganhos. Queres saber mais?`;
     btnLabel = "Network Master";
     btnClass = "bg-white/10 text-white/70 hover:bg-white/20";
+    msgType = "network_master";
   } else if (isInProgress) {
     msg = `Opa! ${nome}, tudo bem? Aqui é o Bruno Dramusse. Vi que começaste a preencher o formulário da Mentoria Individual mas não chegaste ao fim. Queria perceber o que te levou a parar, podes partilhar? Estou aqui para ajudar e, dependendo da tua situação, posso ter uma proposta que se encaixe no teu momento actual.`;
     btnLabel = "Reengajar";
     btnClass = "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30";
+    msgType = "reengajamento";
   } else {
     return <span className="text-white/20 text-xs">—</span>;
   }
@@ -407,7 +497,7 @@ function WhatsAppButton({ session, onContact }: { session: Session; onContact?: 
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => onContact?.()}
+      onClick={() => onContact?.(msgType)}
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-transform hover:scale-105 active:scale-95 ${btnClass}`}
     >
       <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
