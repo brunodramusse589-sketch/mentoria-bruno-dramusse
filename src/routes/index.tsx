@@ -262,6 +262,15 @@ function Index() {
     }).catch(() => {});
   };
 
+  // Envia Web Push para o dashboard (funciona mesmo com app fechado)
+  const notifyDash = (type: "INSERT" | "UPDATE", record: Record<string, unknown>) => {
+    fetch("/api/push-send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, record }),
+    }).catch(() => {});
+  };
+
   // ID novo a cada abertura de página — garante linha nova na planilha por cada visita
   const [localId] = useState<string>(() => crypto.randomUUID());
 
@@ -353,7 +362,13 @@ function Index() {
     const whatsapp = answers["whatsapp"];
     const nome = answers["nome"] ?? "Alguém";
 
-    // Pushcut — timer de abandono: reinicia a cada passo após ter WhatsApp, cancela se completar
+    // Notificar quando WhatsApp é preenchido (novo lead entrou)
+    if (whatsapp && !wasWhatsappNotifRef.current) {
+      wasWhatsappNotifRef.current = true;
+      notifyDash("INSERT", { nome, whatsapp });
+    }
+
+    // Timer de abandono: reinicia a cada passo após ter WhatsApp, cancela se completar
     if (isCompleted) {
       if (abandonTimerRef.current) {
         clearTimeout(abandonTimerRef.current);
@@ -368,11 +383,12 @@ function Index() {
             "Lead abandonou o formulário",
             `${nome} (${whatsapp}) ficou 5 minutos sem finalizar — precisa de ser resgatado.`
           );
+          notifyDash("UPDATE", { nome, whatsapp, completed: false, qualified: null });
         }
       }, 5 * 60 * 1000);
     }
 
-    // Pushcut — notificar quando completa o formulário (SIM ou NÃO)
+    // Notificar quando completa o formulário (SIM ou NÃO)
     if (isCompleted && !wasCompletionNotifRef.current) {
       wasCompletionNotifRef.current = true;
       if (qualified === true) {
@@ -381,12 +397,14 @@ function Index() {
           "Novo lead qualificado! 🔥",
           `${nome} (${whatsapp ?? "sem número"}) disse SIM ao investimento na Mentoria Individual.`
         );
+        notifyDash("UPDATE", { nome, whatsapp, completed: true, qualified: true });
       } else if (qualified === false) {
         notifyPushcut(
           PUSHCUT.networkMaster,
           "Lead para Network Master",
           `${nome} (${whatsapp ?? "sem número"}) disse NÃO ao investimento — candidato para o Network Master.`
         );
+        notifyDash("UPDATE", { nome, whatsapp, completed: true, qualified: false });
       }
     }
 
