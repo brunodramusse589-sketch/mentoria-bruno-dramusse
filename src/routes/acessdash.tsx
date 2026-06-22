@@ -115,6 +115,7 @@ function AcessDash() {
 
 type MsgType = "individual" | "network_master" | "reengajamento";
 type SentMsg = { uid: string; sessionId: string; nome: string; phone: string; type: MsgType; sentAt: string };
+type Pagamento = { uid: string; sessionId: string; nome: string; phone: string; tipo: MsgType; paidAt: string; valor: string };
 
 function Dashboard() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -123,8 +124,14 @@ function Dashboard() {
   const [filter, setFilter] = useState<"all" | "completed" | "qualified" | "not_qualified" | "in_progress">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Session | null>(null);
-  const [tab, setTab] = useState<"leads" | "mensagens">("leads");
+  const [tab, setTab] = useState<"leads" | "mensagens" | "financeiro">("leads");
   const [msgFilter, setMsgFilter] = useState<MsgType | "all">("all");
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>(() => {
+    try {
+      const stored = localStorage.getItem("mentoria_pagamentos");
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
   const [contacted, setContacted] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem("mentoria_contacted");
@@ -146,6 +153,34 @@ function Dashboard() {
       localStorage.setItem("mentoria_contacted", JSON.stringify([...next]));
       return next;
     });
+  };
+
+  const paidIds = useMemo(() => new Set(pagamentos.map(p => p.sessionId)), [pagamentos]);
+
+  const togglePago = (msg: SentMsg) => {
+    if (paidIds.has(msg.sessionId)) {
+      setPagamentos(prev => {
+        const next = prev.filter(p => p.sessionId !== msg.sessionId);
+        localStorage.setItem("mentoria_pagamentos", JSON.stringify(next));
+        return next;
+      });
+    } else {
+      const valor = prompt(`Valor pago por ${msg.nome} (ex: 5000 MZN):`) ?? "";
+      const entry: Pagamento = {
+        uid: crypto.randomUUID(),
+        sessionId: msg.sessionId,
+        nome: msg.nome,
+        phone: msg.phone,
+        tipo: msg.type,
+        paidAt: new Date().toISOString(),
+        valor,
+      };
+      setPagamentos(prev => {
+        const next = [entry, ...prev];
+        localStorage.setItem("mentoria_pagamentos", JSON.stringify(next));
+        return next;
+      });
+    }
   };
 
   const recordMessage = (session: Session, type: MsgType) => {
@@ -305,13 +340,17 @@ function Dashboard() {
 
       {/* Tabs */}
       <div className="border-b border-white/10 px-6 flex gap-1">
-        {(["leads", "mensagens"] as const).map((t) => (
+        {([
+          { key: "leads", label: `Leads (${sessions.length})` },
+          { key: "mensagens", label: `Mensagens (${sentMessages.length})` },
+          { key: "financeiro", label: `Financeiro (${pagamentos.length})` },
+        ] as const).map((t) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t ? "border-white text-white" : "border-transparent text-white/40 hover:text-white/70"}`}
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t.key ? "border-white text-white" : "border-transparent text-white/40 hover:text-white/70"}`}
           >
-            {t === "leads" ? `Leads (${sessions.length})` : `Mensagens (${sentMessages.length})`}
+            {t.label}
           </button>
         ))}
       </div>
@@ -351,11 +390,12 @@ function Dashboard() {
                         <th className="px-4 py-3">Nome</th>
                         <th className="px-4 py-3">WhatsApp</th>
                         <th className="px-4 py-3">Tipo</th>
+                        <th className="px-4 py-3">Pagamento</th>
                       </tr>
                     </thead>
                     <tbody>
                       {visibleMsgs.map((m) => (
-                        <tr key={m.uid} className="border-t border-white/5 hover:bg-white/5">
+                        <tr key={m.uid} className={`border-t border-white/5 hover:bg-white/5 ${paidIds.has(m.sessionId) ? "bg-emerald-500/5" : ""}`}>
                           <td className="px-4 py-3 text-white/50 text-xs whitespace-nowrap">
                             {new Date(m.sentAt).toLocaleString("pt-BR")}
                           </td>
@@ -366,6 +406,19 @@ function Dashboard() {
                             {m.type === "network_master" && <span className="rounded-full bg-white/10 text-white/70 px-2.5 py-1 text-xs font-medium">Network Master</span>}
                             {m.type === "reengajamento" && <span className="rounded-full bg-yellow-500/15 text-yellow-400 px-2.5 py-1 text-xs font-medium">Reengajamento</span>}
                           </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <button
+                              onClick={() => togglePago(m)}
+                              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${paidIds.has(m.sessionId) ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70"}`}
+                            >
+                              {paidIds.has(m.sessionId) ? (
+                                <>
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                  Pago
+                                </>
+                              ) : "Marcar como pago"}
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -374,6 +427,81 @@ function Dashboard() {
               </>
             )}
           </div>
+          );
+        })()}
+
+        {tab === "financeiro" && (() => {
+          const totalIndividual = pagamentos.filter(p => p.tipo === "individual").length;
+          const totalNM = pagamentos.filter(p => p.tipo === "network_master").length;
+          return (
+            <div className="space-y-4">
+              {/* Summary cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="text-xs text-white/50">Total de Pagamentos</div>
+                  <div className="mt-1 text-2xl font-semibold text-white">{pagamentos.length}</div>
+                </div>
+                <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4">
+                  <div className="text-xs text-green-400/70">Mentoria Individual</div>
+                  <div className="mt-1 text-2xl font-semibold text-green-400">{totalIndividual}</div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="text-xs text-white/50">Network Master</div>
+                  <div className="mt-1 text-2xl font-semibold text-white">{totalNM}</div>
+                </div>
+              </div>
+
+              {pagamentos.length === 0 ? (
+                <p className="text-white/40 text-sm py-8 text-center">Nenhum pagamento registado ainda. Marca como pago na aba Mensagens.</p>
+              ) : (
+                <div className="rounded-xl border border-white/10 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-white/5 text-left text-xs uppercase text-white/50">
+                      <tr>
+                        <th className="px-4 py-3">Data</th>
+                        <th className="px-4 py-3">Nome</th>
+                        <th className="px-4 py-3">WhatsApp</th>
+                        <th className="px-4 py-3">Produto</th>
+                        <th className="px-4 py-3">Valor</th>
+                        <th className="px-4 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagamentos.map((p) => (
+                        <tr key={p.uid} className="border-t border-white/5 hover:bg-white/5">
+                          <td className="px-4 py-3 text-white/50 text-xs whitespace-nowrap">{new Date(p.paidAt).toLocaleDateString("pt-BR")}</td>
+                          <td className="px-4 py-3 font-medium whitespace-nowrap">{p.nome}</td>
+                          <td className="px-4 py-3 text-white/70 whitespace-nowrap">{p.phone}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {p.tipo === "individual" && <span className="rounded-full bg-green-500/15 text-green-400 px-2.5 py-1 text-xs font-medium">Mentoria Individual</span>}
+                            {p.tipo === "network_master" && <span className="rounded-full bg-white/10 text-white/70 px-2.5 py-1 text-xs font-medium">Network Master</span>}
+                            {p.tipo === "reengajamento" && <span className="rounded-full bg-yellow-500/15 text-yellow-400 px-2.5 py-1 text-xs font-medium">Reengajamento</span>}
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-emerald-400 whitespace-nowrap">{p.valor || <span className="text-white/30 font-normal">—</span>}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <button
+                              onClick={() => {
+                                if (confirm(`Remover pagamento de ${p.nome}?`)) {
+                                  setPagamentos(prev => {
+                                    const next = prev.filter(x => x.uid !== p.uid);
+                                    localStorage.setItem("mentoria_pagamentos", JSON.stringify(next));
+                                    return next;
+                                  });
+                                }
+                              }}
+                              className="text-white/20 hover:text-red-400 transition-colors text-xs"
+                              title="Remover"
+                            >
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           );
         })()}
 
