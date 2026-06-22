@@ -7,6 +7,7 @@ export const Route = createFileRoute("/acessdash")({
     meta: [
       { title: "Dashboard — Mentoria Bruno Dramusse" },
       { name: "robots", content: "noindex,nofollow" },
+      { name: "google", content: "notranslate" },
     ],
   }),
   component: AcessDash,
