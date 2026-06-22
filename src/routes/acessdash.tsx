@@ -351,9 +351,9 @@ function WhatsAppButton({ session }: { session: Session }) {
 
   let msg = "";
   if (isQualified) {
-    msg = `Olá ${nome}! 👋 Aqui é o Bruno Dramusse. Vi que preencheste o formulário da Mentoria e estás pronto para investir no teu crescimento. Quero agendar uma call contigo para alinharmos tudo antes de fecharmos. Qual o melhor horário para ti?`;
+    msg = `Opa! ${nome}, tudo bem? 👋 Aqui é o Bruno Dramusse. Vi que preencheste o formulário da Mentoria e estás pronto para investir no teu crescimento. Quero agendar uma call contigo para alinharmos tudo antes de fecharmos. Qual o melhor horário para ti?`;
   } else if (isNotQualified) {
-    msg = `Olá ${nome}! 👋 Aqui é o Bruno Dramusse. Vi que preencheste o formulário da Mentoria. Entendo que o investimento individual pode estar além do alcance agora — mas tenho a solução certa para ti: o *Network Master*. Por uma fração do valor aprendes o método completo, generates os teus primeiros resultados e constróis o caixa. Depois é só fazer o upgrade para a Mentoria Individual e triplicar os teus ganhos. Queres saber mais?`;
+    msg = `Opa! ${nome}, tudo bem? 👋 Aqui é o Bruno Dramusse. Vi que preencheste o formulário da Mentoria. Entendo que o investimento individual pode estar além do alcance agora — mas tenho a solução certa para ti: o *Network Master*. Por uma fração do valor aprendes o método completo, generates os teus primeiros resultados e constróis o caixa. Depois é só fazer o upgrade para a Mentoria Individual e triplicar os teus ganhos. Queres saber mais?`;
   } else {
     return <span className="text-white/20 text-xs">—</span>;
   }
