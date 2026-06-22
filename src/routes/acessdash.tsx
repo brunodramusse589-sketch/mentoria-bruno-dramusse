@@ -73,59 +73,58 @@ function AcessDash() {
 
   if (authed === null) {
     return (
-      <div className="min-h-screen bg-white grid place-items-center">
-        <div className="w-10 h-10 rounded-full border-4 border-[#10b981] border-t-transparent animate-spin" />
+      <div className="min-h-screen bg-[#0a0a0a] grid place-items-center">
+        <div className="w-10 h-10 rounded-full border-4 border-white/20 border-t-white animate-spin" />
       </div>
     );
   }
 
   if (!authed) {
     return (
-      <div className="min-h-screen bg-white grid place-items-center px-6">
+      <div className="min-h-screen bg-[#0a0a0a] text-white grid place-items-center px-6">
         <form onSubmit={submit} className="w-full max-w-sm space-y-5">
-          {/* Ícone */}
-          <div className="w-14 h-14 rounded-2xl bg-[#10b981] flex items-center justify-center mb-2">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mb-2">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
             </svg>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Bem-vindo de volta</h1>
-            <p className="text-sm text-gray-500 mt-1">Gerencie seus leads e pagamentos.</p>
+            <h1 className="text-2xl font-bold text-white">Bem-vindo de volta</h1>
+            <p className="text-sm text-white/50 mt-1">Gerencie seus leads e pagamentos.</p>
           </div>
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Email</label>
+              <label className="text-sm font-medium text-white/70 mb-1.5 block">Email</label>
               <input
                 type="email"
                 required
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl bg-gray-100 border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all text-gray-900 placeholder-gray-400"
+                className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-white/30 transition-all text-white placeholder-white/25"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Senha</label>
+              <label className="text-sm font-medium text-white/70 mb-1.5 block">Senha</label>
               <input
                 type="password"
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl bg-gray-100 border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all text-gray-900 placeholder-gray-400"
+                className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-white/30 transition-all text-white placeholder-white/25"
               />
             </div>
           </div>
           {authError && (
-            <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600">
+            <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
               {authError}
             </div>
           )}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-[#10b981] hover:bg-[#059669] text-white font-semibold py-3.5 text-sm disabled:opacity-60 transition-colors"
+            className="w-full rounded-xl bg-white hover:bg-white/90 text-black font-semibold py-3.5 text-sm disabled:opacity-50 transition-colors"
           >
             {loading ? "A entrar..." : "Entrar na conta"}
           </button>
