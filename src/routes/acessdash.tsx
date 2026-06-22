@@ -169,14 +169,23 @@ function Dashboard() {
   }, [sessions, filter, search]);
 
   const exportCSV = () => {
-    const headers = ["Nome", "WhatsApp", "Instagram", "Etapa", "Completou", "Qualificado", "Início", "Atualizado"];
+    const headers = ["Nome", "WhatsApp", "Instagram", "Como conheceu", "Modelo negócio", "Dificuldade", "Objetivo 90d", "Autodidata", "Caixa", "Dúvidas", "Horários flexíveis", "Compromisso", "Investimento", "Status", "Completou", "Início", "Atualizado"];
     const rows = filtered.map((s) => [
       s.nome ?? "",
       s.whatsapp ?? "",
       s.instagram ?? "",
-      STEP_LABELS[s.last_step_key ?? ""] ?? s.last_step_key ?? "",
+      s.answers?.conheceu ?? "",
+      s.answers?.modelo ?? "",
+      s.answers?.dificuldade ?? "",
+      s.answers?.objetivo ?? "",
+      s.answers?.autodidata ?? "",
+      s.answers?.caixa ?? "",
+      s.answers?.duvidas ?? "",
+      s.answers?.flexivel ?? "",
+      s.answers?.compromisso ?? "",
+      s.answers?.investimento ?? "",
+      s.qualified === true ? "Qualificado (SIM)" : s.qualified === false ? "Não qualificado" : s.completed ? "Finalizou" : s.current_step > 0 ? "Em progresso" : "Abriu",
       s.completed ? "Sim" : "Não",
-      s.qualified === true ? "Sim" : s.qualified === false ? "Não" : "",
       new Date(s.started_at).toLocaleString("pt-BR"),
       new Date(s.updated_at).toLocaleString("pt-BR"),
     ]);
@@ -252,19 +261,28 @@ function Dashboard() {
             <table className="w-full text-sm">
               <thead className="bg-white/5 text-left text-xs uppercase text-white/50">
                 <tr>
-                  <th className="px-4 py-3">Nome</th>
-                  <th className="px-4 py-3">WhatsApp</th>
-                  <th className="px-4 py-3">Instagram</th>
-                  <th className="px-4 py-3">Etapa atual</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Atualizado</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Nome</th>
+                  <th className="px-4 py-3 whitespace-nowrap">WhatsApp</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Instagram</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Como conheceu</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Modelo negócio</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Dificuldade</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Objetivo 90d</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Autodidata</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Caixa</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Dúvidas</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Horários</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Compromisso</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Investimento</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Atualizado</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
+                  <tr><td colSpan={15} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-white/50">Nenhuma resposta ainda</td></tr>
+                  <tr><td colSpan={15} className="px-4 py-8 text-center text-white/50">Nenhuma resposta ainda</td></tr>
                 ) : (
                   filtered.map((s) => (
                     <tr
@@ -272,18 +290,25 @@ function Dashboard() {
                       onClick={() => setSelected(s)}
                       className="border-t border-white/5 hover:bg-white/5 cursor-pointer"
                     >
-                      <td className="px-4 py-3">{s.nome ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3">{s.whatsapp ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3">{s.instagram ?? <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-3">
-                        <span className="rounded-md bg-white/10 px-2 py-0.5 text-xs">
-                          {STEP_LABELS[s.last_step_key ?? ""] ?? s.last_step_key ?? "—"}
-                        </span>
+                      <td className="px-4 py-3 whitespace-nowrap">{s.nome ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">{s.whatsapp ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">{s.instagram ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.conheceu ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.modelo ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 text-xs max-w-[160px] truncate">{s.answers?.dificuldade ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 text-xs max-w-[160px] truncate">{s.answers?.objetivo ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.autodidata ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.caixa ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 text-xs max-w-[160px] truncate">{s.answers?.duvidas ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.flexivel ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs">{s.answers?.compromisso ?? <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs font-medium" style={{ color: s.answers?.investimento?.toUpperCase().startsWith("SIM") ? "#22c55e" : s.answers?.investimento === "NÃO" ? "#ef4444" : undefined }}>
+                        {s.answers?.investimento ?? <span className="text-white/30">—</span>}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <StatusBadge session={s} />
                       </td>
-                      <td className="px-4 py-3 text-white/60 text-xs">
+                      <td className="px-4 py-3 whitespace-nowrap text-white/60 text-xs">
                         {new Date(s.updated_at).toLocaleString("pt-BR")}
                       </td>
                     </tr>

@@ -280,22 +280,20 @@ function Index() {
         ? investimento.toUpperCase().startsWith("SIM")
         : null;
 
-    // Supabase (opcional, best-effort)
-    if (sessionId) {
-      supabase.from("quiz_sessions").update({
-        current_step: index,
-        last_step_key: stepKey,
-        answers,
-        completed: isCompleted,
-        qualified,
-        nome: answers["nome"] ?? null,
-        whatsapp: answers["whatsapp"] ?? null,
-        instagram: answers["instagram"] ?? null,
-        ...(isCompleted ? { completed_at: new Date().toISOString() } : {}),
-      }).eq("id", sessionId).then(({ error }) => {
-        if (error) console.error("Supabase update:", error.message);
-      });
-    }
+    // Supabase — usa localId directamente (sempre disponível após handleStart)
+    supabase.from("quiz_sessions").update({
+      current_step: index,
+      last_step_key: stepKey,
+      answers,
+      completed: isCompleted,
+      qualified,
+      nome: answers["nome"] ?? null,
+      whatsapp: answers["whatsapp"] ?? null,
+      instagram: answers["instagram"] ?? null,
+      ...(isCompleted ? { completed_at: new Date().toISOString() } : {}),
+    }).eq("id", localId).then(({ error }) => {
+      if (error) console.error("Supabase update:", error.message);
+    });
 
     // Google Sheets — envia só os campos novos (1 pedido por passo, sem race conditions)
     const KEY_MAP: Record<string, string> = {
@@ -335,7 +333,7 @@ function Index() {
       }).catch(() => {});
     }
 
-  }, [index, answers, sessionId, localId]);
+  }, [index, answers, localId]);
 
   const isLast = index === steps.length - 2; // last interactive before thanks
   const total = steps.length - 2; // exclude intro + thanks
