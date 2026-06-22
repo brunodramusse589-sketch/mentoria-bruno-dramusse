@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 export const Route = createFileRoute("/acessdash")({
   head: () => ({
@@ -157,6 +158,12 @@ function Dashboard() {
 
   const paidIds = useMemo(() => new Set(pagamentos.map(p => p.sessionId)), [pagamentos]);
 
+  const PRECOS: Record<MsgType, number> = {
+    individual: 10000,
+    network_master: 2500,
+    reengajamento: 0,
+  };
+
   const togglePago = (msg: SentMsg) => {
     if (paidIds.has(msg.sessionId)) {
       setPagamentos(prev => {
@@ -165,7 +172,10 @@ function Dashboard() {
         return next;
       });
     } else {
-      const valor = prompt(`Valor pago por ${msg.nome} (ex: 5000 MZN):`) ?? "";
+      const preco = PRECOS[msg.type];
+      const valorDefault = preco > 0 ? `${preco.toLocaleString("pt-BR")} MZN` : "";
+      const valor = prompt(`Valor pago por ${msg.nome}:`, valorDefault) ?? valorDefault;
+      if (valor === null) return;
       const entry: Pagamento = {
         uid: crypto.randomUUID(),
         sessionId: msg.sessionId,
@@ -431,25 +441,88 @@ function Dashboard() {
         })()}
 
         {tab === "financeiro" && (() => {
-          const totalIndividual = pagamentos.filter(p => p.tipo === "individual").length;
-          const totalNM = pagamentos.filter(p => p.tipo === "network_master").length;
+          const nIndividual = pagamentos.filter(p => p.tipo === "individual").length;
+          const nNM = pagamentos.filter(p => p.tipo === "network_master").length;
+          const receitaIndividual = nIndividual * 10000;
+          const receitaNM = nNM * 2500;
+          const receitaTotal = receitaIndividual + receitaNM;
+
+          const fmt = (v: number) => v.toLocaleString("pt-BR") + " MZN";
+
+          // Pie chart data
+          const pieData = [
+            { name: "Mentoria Individual", value: nIndividual, color: "#22c55e" },
+            { name: "Network Master", value: nNM, color: "#a3a3a3" },
+          ].filter(d => d.value > 0);
+
+          // Bar chart: pagamentos por dia (últimos 14 dias)
+          const barData = (() => {
+            const map: Record<string, { Individual: number; NM: number }> = {};
+            pagamentos.forEach(p => {
+              const d = new Date(p.paidAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+              if (!map[d]) map[d] = { Individual: 0, NM: 0 };
+              if (p.tipo === "individual") map[d].Individual++;
+              else if (p.tipo === "network_master") map[d].NM++;
+            });
+            return Object.entries(map).slice(-14).map(([data, v]) => ({ data, ...v }));
+          })();
+
           return (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Summary cards */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="text-xs text-white/50">Total de Pagamentos</div>
-                  <div className="mt-1 text-2xl font-semibold text-white">{pagamentos.length}</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 md:col-span-2">
+                  <div className="text-xs text-white/50">Receita Total</div>
+                  <div className="mt-1 text-3xl font-bold text-emerald-400">{fmt(receitaTotal)}</div>
+                  <div className="text-xs text-white/30 mt-1">{pagamentos.length} pagamentos registados</div>
                 </div>
                 <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4">
                   <div className="text-xs text-green-400/70">Mentoria Individual</div>
-                  <div className="mt-1 text-2xl font-semibold text-green-400">{totalIndividual}</div>
+                  <div className="mt-1 text-xl font-semibold text-green-400">{fmt(receitaIndividual)}</div>
+                  <div className="text-xs text-white/30 mt-1">{nIndividual} × 10.000 MZN</div>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                   <div className="text-xs text-white/50">Network Master</div>
-                  <div className="mt-1 text-2xl font-semibold text-white">{totalNM}</div>
+                  <div className="mt-1 text-xl font-semibold text-white">{fmt(receitaNM)}</div>
+                  <div className="text-xs text-white/30 mt-1">{nNM} × 2.500 MZN</div>
                 </div>
               </div>
+
+              {pagamentos.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Bar chart */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="text-xs text-white/50 mb-4 uppercase tracking-wide">Pagamentos por dia</div>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={barData} barSize={14}>
+                        <XAxis dataKey="data" tick={{ fill: "#ffffff55", fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: "#ffffff55", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <Tooltip contentStyle={{ background: "#111", border: "1px solid #ffffff15", borderRadius: 8, color: "#fff", fontSize: 12 }} />
+                        <Bar dataKey="Individual" name="Mentoria Individual" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="NM" name="Network Master" fill="#a3a3a3" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Pie chart */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="text-xs text-white/50 mb-4 uppercase tracking-wide">Distribuição</div>
+                    {pieData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} innerRadius={45} paddingAngle={3} label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                            {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                          </Pie>
+                          <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ color: "#ffffff80", fontSize: 12 }}>{v}</span>} />
+                          <Tooltip contentStyle={{ background: "#111", border: "1px solid #ffffff15", borderRadius: 8, color: "#fff", fontSize: 12 }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-48 flex items-center justify-center text-white/30 text-sm">Sem dados</div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {pagamentos.length === 0 ? (
                 <p className="text-white/40 text-sm py-8 text-center">Nenhum pagamento registado ainda. Marca como pago na aba Mensagens.</p>
@@ -491,9 +564,7 @@ function Dashboard() {
                               }}
                               className="text-white/20 hover:text-red-400 transition-colors text-xs"
                               title="Remover"
-                            >
-                              ✕
-                            </button>
+                            >✕</button>
                           </td>
                         </tr>
                       ))}
