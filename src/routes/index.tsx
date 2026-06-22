@@ -244,6 +244,22 @@ function Index() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const prevAnswersRef = useRef<Record<string, string>>({});
   const wasCompletedRef = useRef(false);
+  const wasWhatsappNotifRef = useRef(false);
+  const wasCompletionNotifRef = useRef(false);
+
+  const PUSHCUT = {
+    individual: "https://api.pushcut.io/tJiLz1JoTuyyofrIG9JGh/notifications/Mentoria%20Bruno%20Dramusse%20-%20Individual%20",
+    networkMaster: "https://api.pushcut.io/tJiLz1JoTuyyofrIG9JGh/notifications/Network%20Master%20",
+    naoUltimou: "https://api.pushcut.io/tJiLz1JoTuyyofrIG9JGh/notifications/N%C3%A3o%20ultimou%20de%20preencher%20",
+  };
+
+  const notifyPushcut = (url: string, title: string, text: string) => {
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, text }),
+    }).catch(() => {});
+  };
 
   // ID novo a cada abertura de página — garante linha nova na planilha por cada visita
   const [localId] = useState<string>(() => crypto.randomUUID());
@@ -331,6 +347,36 @@ function Index() {
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ sessionId: localId, status: "Completo" }),
       }).catch(() => {});
+    }
+
+    // Pushcut — notificar quando WhatsApp é submetido (não ultimou)
+    const whatsapp = answers["whatsapp"];
+    const nome = answers["nome"] ?? "Alguém";
+    if (whatsapp && !wasWhatsappNotifRef.current) {
+      wasWhatsappNotifRef.current = true;
+      notifyPushcut(
+        PUSHCUT.naoUltimou,
+        "Formulário em progresso",
+        `${nome} (${whatsapp}) começou a preencher mas ainda não terminou.`
+      );
+    }
+
+    // Pushcut — notificar quando completa o formulário (SIM ou NÃO)
+    if (isCompleted && !wasCompletionNotifRef.current) {
+      wasCompletionNotifRef.current = true;
+      if (qualified === true) {
+        notifyPushcut(
+          PUSHCUT.individual,
+          "Novo lead qualificado! 🔥",
+          `${nome} (${whatsapp ?? "sem número"}) disse SIM ao investimento na Mentoria Individual.`
+        );
+      } else if (qualified === false) {
+        notifyPushcut(
+          PUSHCUT.networkMaster,
+          "Lead para Network Master",
+          `${nome} (${whatsapp ?? "sem número"}) disse NÃO ao investimento — candidato para o Network Master.`
+        );
+      }
     }
 
   }, [index, answers, localId]);
