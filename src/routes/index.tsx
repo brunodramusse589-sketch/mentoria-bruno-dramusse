@@ -279,12 +279,11 @@ function Index() {
   // Cria sessão na Supabase em background — não bloqueia o Google Sheets
   const ensureSession = async (): Promise<string> => {
     if (!sessionId) {
-      const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
       supabase
         .from("quiz_sessions")
-        .upsert({ id: localId, user_agent: ua }, { onConflict: "id" })
+        .upsert({ id: localId }, { onConflict: "id" })
         .then(({ error }) => {
-          if (error) console.error("Supabase:", error.message);
+          if (error) console.error("Supabase upsert:", error.message);
           else setSessionId(localId);
         });
     }
