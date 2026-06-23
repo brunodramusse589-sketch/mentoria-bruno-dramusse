@@ -880,7 +880,7 @@ function Dashboard() {
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-2">
-                    <p className="text-xs text-white/30">{new Date(s.started_at).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })}</p>
+                    <p className="text-xs text-white/30">{new Date(s.started_at).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", timeZone:"Africa/Maputo" })}</p>
                     <div onClick={(e) => e.stopPropagation()}>
                       <WhatsAppButton session={s} onContact={(type) => recordMessage(s, type)} />
                     </div>
@@ -907,7 +907,7 @@ function Dashboard() {
                   <tbody>
                     {filtered.map((s) => (
                       <tr key={s.id} onClick={() => setSelected(s)} className={`border-t border-white/5 hover:bg-white/5 cursor-pointer transition-colors ${contacted.has(s.id) ? "bg-green-500/5" : ""}`}>
-                        <td className="px-4 py-3 whitespace-nowrap text-white/60 text-xs">{new Date(s.started_at).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-white/60 text-xs">{new Date(s.started_at).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", timeZone:"Africa/Maputo" })}</td>
                         <td className="px-4 py-3 whitespace-nowrap font-medium">{s.nome ?? <span className="text-white/30">—</span>}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-white/80">{s.whatsapp ?? <span className="text-white/30">—</span>}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold" style={{ color: s.answers?.investimento?.toUpperCase()?.startsWith("SIM") ? "#22c55e" : s.answers?.investimento === "NÃO" ? "#ef4444" : undefined }}>
