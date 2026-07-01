@@ -387,54 +387,52 @@ function Dashboard() {
     sb.from("dashboard_msgs").insert(toAdd.map((m: SentMsg) => ({ uid: m.uid, session_id: m.sessionId, nome: m.nome, phone: m.phone, type: m.type, sent_at: m.sentAt }))).then(() => {});
   }, [dataLoaded, sessions]);
 
+  // Lista filtrada apenas por período (usada nos stats e como base para os outros filtros)
+  const periodFiltered = useMemo(() => {
+    if (dateFilter === "all") return sessions;
+    const now = new Date();
+    const tz = "Africa/Maputo";
+    const todayStr = now.toLocaleDateString("sv-SE", { timeZone: tz });
+    const yestDate = new Date(now); yestDate.setDate(yestDate.getDate() - 1);
+    const yestStr = yestDate.toLocaleDateString("sv-SE", { timeZone: tz });
+    const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    return sessions.filter((s) => {
+      const d = new Date(s.started_at);
+      const dStr = d.toLocaleDateString("sv-SE", { timeZone: tz });
+      if (dateFilter === "today") return dStr === todayStr;
+      if (dateFilter === "yesterday") return dStr === yestStr;
+      if (dateFilter === "last7") {
+        const ago = new Date(now); ago.setDate(ago.getDate() - 6); ago.setHours(0, 0, 0, 0);
+        return d >= ago;
+      }
+      if (dateFilter === "this_month") return d >= firstDayThisMonth;
+      if (dateFilter === "last_month") return d >= firstDayLastMonth && d <= lastDayLastMonth;
+      if (dateFilter === "custom" && customStart) {
+        const start = new Date(customStart + "T00:00:00");
+        const end = customEnd ? new Date(customEnd + "T23:59:59") : new Date();
+        return d >= start && d <= end;
+      }
+      return true;
+    });
+  }, [sessions, dateFilter, customStart, customEnd]);
+
   const stats = useMemo(() => {
-    const total = sessions.length;
-    const completed = sessions.filter((s) => s.completed).length;
-    const qualified = sessions.filter((s) => s.qualified === true).length;
-    const notQualified = sessions.filter((s) => s.completed && s.qualified === false).length;
-    const inProgress = sessions.filter((s) => !s.completed && s.current_step > 0).length;
+    const total = periodFiltered.length;
+    const completed = periodFiltered.filter((s) => s.completed).length;
+    const qualified = periodFiltered.filter((s) => s.qualified === true).length;
+    const notQualified = periodFiltered.filter((s) => s.completed && s.qualified === false).length;
+    const inProgress = periodFiltered.filter((s) => !s.completed && s.current_step > 0).length;
     return { total, completed, qualified, notQualified, inProgress };
-  }, [sessions]);
+  }, [periodFiltered]);
 
   const filtered = useMemo(() => {
-    let list = sessions;
+    let list = periodFiltered;
     if (filter === "completed") list = list.filter((s) => s.completed);
     else if (filter === "qualified") list = list.filter((s) => s.qualified === true);
     else if (filter === "not_qualified") list = list.filter((s) => s.completed && s.qualified === false);
     else if (filter === "in_progress") list = list.filter((s) => !s.completed && s.current_step > 0);
-
-    // Filtro de período
-    if (dateFilter !== "all") {
-      const now = new Date();
-      const tz = "Africa/Maputo";
-      const todayStr = now.toLocaleDateString("sv-SE", { timeZone: tz });
-      const yestDate = new Date(now); yestDate.setDate(yestDate.getDate() - 1);
-      const yestStr = yestDate.toLocaleDateString("sv-SE", { timeZone: tz });
-      const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-
-      list = list.filter((s) => {
-        const d = new Date(s.started_at);
-        const dStr = d.toLocaleDateString("sv-SE", { timeZone: tz });
-        if (dateFilter === "today") return dStr === todayStr;
-        if (dateFilter === "yesterday") return dStr === yestStr;
-        if (dateFilter === "last7") {
-          const ago = new Date(now); ago.setDate(ago.getDate() - 6);
-          ago.setHours(0, 0, 0, 0);
-          return d >= ago;
-        }
-        if (dateFilter === "this_month") return d >= firstDayThisMonth;
-        if (dateFilter === "last_month") return d >= firstDayLastMonth && d <= lastDayLastMonth;
-        if (dateFilter === "custom" && customStart) {
-          const start = new Date(customStart + "T00:00:00");
-          const end = customEnd ? new Date(customEnd + "T23:59:59") : new Date();
-          return d >= start && d <= end;
-        }
-        return true;
-      });
-    }
-
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -445,7 +443,7 @@ function Dashboard() {
       );
     }
     return list;
-  }, [sessions, filter, search, dateFilter, customStart, customEnd]);
+  }, [periodFiltered, filter, search]);
 
   const exportCSV = () => {
     const headers = ["Nome", "WhatsApp", "Instagram", "Como conheceu", "Modelo negócio", "Dificuldade", "Objetivo 90d", "Autodidata", "Caixa", "Dúvidas", "Horários flexíveis", "Compromisso", "Investimento", "Status", "Completou", "Início", "Atualizado"];
