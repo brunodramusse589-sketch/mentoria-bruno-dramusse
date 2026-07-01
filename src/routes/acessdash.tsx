@@ -146,6 +146,11 @@ function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<"all" | "completed" | "qualified" | "not_qualified" | "in_progress">("all");
   const [search, setSearch] = useState("");
+  type DateFilter = "all" | "today" | "yesterday" | "last7" | "this_month" | "last_month" | "custom";
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selected, setSelected] = useState<Session | null>(null);
   const [tab, setTab] = useState<"leads" | "mensagens" | "financeiro">("leads");
   const [msgFilter, setMsgFilter] = useState<MsgType | "all">("all");
@@ -397,6 +402,39 @@ function Dashboard() {
     else if (filter === "qualified") list = list.filter((s) => s.qualified === true);
     else if (filter === "not_qualified") list = list.filter((s) => s.completed && s.qualified === false);
     else if (filter === "in_progress") list = list.filter((s) => !s.completed && s.current_step > 0);
+
+    // Filtro de período
+    if (dateFilter !== "all") {
+      const now = new Date();
+      const tz = "Africa/Maputo";
+      const todayStr = now.toLocaleDateString("sv-SE", { timeZone: tz });
+      const yestDate = new Date(now); yestDate.setDate(yestDate.getDate() - 1);
+      const yestStr = yestDate.toLocaleDateString("sv-SE", { timeZone: tz });
+      const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+      list = list.filter((s) => {
+        const d = new Date(s.started_at);
+        const dStr = d.toLocaleDateString("sv-SE", { timeZone: tz });
+        if (dateFilter === "today") return dStr === todayStr;
+        if (dateFilter === "yesterday") return dStr === yestStr;
+        if (dateFilter === "last7") {
+          const ago = new Date(now); ago.setDate(ago.getDate() - 6);
+          ago.setHours(0, 0, 0, 0);
+          return d >= ago;
+        }
+        if (dateFilter === "this_month") return d >= firstDayThisMonth;
+        if (dateFilter === "last_month") return d >= firstDayLastMonth && d <= lastDayLastMonth;
+        if (dateFilter === "custom" && customStart) {
+          const start = new Date(customStart + "T00:00:00");
+          const end = customEnd ? new Date(customEnd + "T23:59:59") : new Date();
+          return d >= start && d <= end;
+        }
+        return true;
+      });
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -407,7 +445,7 @@ function Dashboard() {
       );
     }
     return list;
-  }, [sessions, filter, search]);
+  }, [sessions, filter, search, dateFilter, customStart, customEnd]);
 
   const exportCSV = () => {
     const headers = ["Nome", "WhatsApp", "Instagram", "Como conheceu", "Modelo negócio", "Dificuldade", "Objetivo 90d", "Autodidata", "Caixa", "Dúvidas", "Horários flexíveis", "Compromisso", "Investimento", "Status", "Completou", "Início", "Atualizado"];
@@ -840,13 +878,53 @@ function Dashboard() {
           )}
         </div>
 
-        {/* Search */}
-        <input
-          placeholder="Buscar por nome, WhatsApp ou Instagram..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/30"
-        />
+        {/* Search + Filtro de período */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <input
+            placeholder="Buscar por nome, WhatsApp ou Instagram..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 min-w-[200px] max-w-md rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/30"
+          />
+          <div className="relative">
+            <select
+              value={dateFilter}
+              onChange={(e) => {
+                const v = e.target.value as DateFilter;
+                setDateFilter(v);
+                if (v === "custom") setShowDatePicker(true);
+                else setShowDatePicker(false);
+              }}
+              className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/30 appearance-none pr-8 cursor-pointer"
+            >
+              <option value="all" className="bg-[#111]">Máximo</option>
+              <option value="today" className="bg-[#111]">Hoje</option>
+              <option value="yesterday" className="bg-[#111]">Ontem</option>
+              <option value="last7" className="bg-[#111]">Últimos 7 dias</option>
+              <option value="this_month" className="bg-[#111]">Esse mês</option>
+              <option value="last_month" className="bg-[#111]">Mês passado</option>
+              <option value="custom" className="bg-[#111]">Personalizado</option>
+            </select>
+            <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/40" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          {dateFilter === "custom" && (
+            <div className="flex items-center gap-2 text-sm">
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+              />
+              <span className="text-white/40 text-xs">até</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+              />
+            </div>
+          )}
+        </div>
 
         {/* Cards mobile / Tabela desktop */}
         {loading ? (
