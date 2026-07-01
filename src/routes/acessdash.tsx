@@ -1139,7 +1139,7 @@ function PitchModal({ session, onClose, onContact }: { session: Session; onClose
 
   const msgs = [
     `Opa ${nome}! Aqui é o Bruno Dramusse. Tenho apenas 5 vagas disponíveis para a Mentoria Individual.`,
-    `O Carlos, um dos meus mentorados, seguiu o método comigo e num único dia fez R$1.783 de faturamento com ROAS de 2.72 e R$1.128 de lucro líquido. Estou a levá-lo para os 30k no dia.`,
+    `O Carlos, um dos meus mentorados, seguiu o método comigo e num único dia fez 1.783 MT de faturamento com ROAS de 2.72 e 1.128 MT de lucro líquido. Estou a levá-lo para os 30k MT no dia.`,
     `Li as tuas respostas no formulário e tens o perfil certo para estar aqui. Queres fechar uma das vagas? Se tiveres alguma dúvida antes de entrar marcamos uma call rápida para esclarecer, caso contrário fechamos direto agora.`,
   ];
 
