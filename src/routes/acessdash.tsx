@@ -1096,6 +1096,20 @@ function DetailDrawer({ session, onClose }: { session: Session; onClose: () => v
           </div>
           <StatusBadge session={session} />
           <div className="space-y-3">
+            {session.whatsapp && (
+              <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                <div className="text-xs uppercase text-white/40">WhatsApp</div>
+                <a
+                  href={`https://wa.me/${session.whatsapp.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 text-sm text-green-400 hover:underline flex items-center gap-1.5"
+                >
+                  {session.whatsapp}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </a>
+              </div>
+            )}
             {Object.entries(session.answers ?? {}).map(([k, v]) => (
               <div key={k} className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                 <div className="text-xs uppercase text-white/40">{STEP_LABELS[k] ?? k}</div>
