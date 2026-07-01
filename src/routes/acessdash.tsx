@@ -136,7 +136,7 @@ function AcessDash() {
   return <Dashboard />;
 }
 
-type MsgType = "individual" | "network_master" | "reengajamento";
+type MsgType = "individual" | "network_master" | "reengajamento" | "pitch";
 type SentMsg = { uid: string; sessionId: string; nome: string; phone: string; type: MsgType; sentAt: string };
 type Pagamento = { uid: string; sessionId: string; nome: string; phone: string; tipo: MsgType; paidAt: string; valor: string };
 
@@ -152,6 +152,7 @@ function Dashboard() {
   const [customEnd, setCustomEnd] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selected, setSelected] = useState<Session | null>(null);
+  const [pitchSession, setPitchSession] = useState<Session | null>(null);
   const [tab, setTab] = useState<"leads" | "mensagens" | "financeiro">("leads");
   const [msgFilter, setMsgFilter] = useState<MsgType | "all">("all");
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
@@ -686,9 +687,10 @@ function Dashboard() {
                         <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
                           m.type === "individual" ? "bg-green-500/15 text-green-400" :
                           m.type === "network_master" ? "bg-blue-500/15 text-blue-400" :
+                          m.type === "pitch" ? "bg-orange-500/15 text-orange-400" :
                           "bg-yellow-500/15 text-yellow-400"
                         }`}>
-                          {m.type === "individual" ? "Individual" : m.type === "network_master" ? "NM" : "Reengaj."}
+                          {m.type === "individual" ? "Individual" : m.type === "network_master" ? "NM" : m.type === "pitch" ? "Pitch" : "Reengaj."}
                         </span>
                       </div>
                       <div className="flex items-center justify-between mt-3">
@@ -957,8 +959,9 @@ function Dashboard() {
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <p className="text-xs text-white/30">{new Date(s.started_at).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", timeZone:"Africa/Maputo" })}</p>
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                       <WhatsAppButton session={s} onContact={(type) => recordMessage(s, type)} />
+                      {s.whatsapp && <button onClick={() => setPitchSession(s)} className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors">Pitch</button>}
                     </div>
                   </div>
                 </div>
@@ -990,7 +993,12 @@ function Dashboard() {
                           {s.answers?.investimento ?? <span className="text-white/30 font-normal">—</span>}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap"><StatusBadge session={s} /></td>
-                        <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}><WhatsAppButton session={s} onContact={(type) => recordMessage(s, type)} /></td>
+                        <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1.5">
+                            <WhatsAppButton session={s} onContact={(type) => recordMessage(s, type)} />
+                            {s.whatsapp && <button onClick={() => setPitchSession(s)} className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors">Pitch</button>}
+                          </div>
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <button onClick={() => toggleContacted(s.id)} className="flex items-center justify-center w-7 h-7 rounded-full border transition-colors" style={contacted.has(s.id) ? { background: "#22c55e22", borderColor: "#22c55e" } : { background: "transparent", borderColor: "rgba(255,255,255,0.15)" }}>
                             {contacted.has(s.id) && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
@@ -1008,6 +1016,7 @@ function Dashboard() {
       </div>
 
       {selected && <DetailDrawer session={selected} onClose={() => setSelected(null)} />}
+      {pitchSession && <PitchModal session={pitchSession} onClose={() => setPitchSession(null)} onContact={(type) => { recordMessage(pitchSession, type); setPitchSession(null); }} />}
     </div>
   );
 }
@@ -1117,6 +1126,68 @@ function DetailDrawer({ session, onClose }: { session: Session; onClose: () => v
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PitchModal({ session, onClose, onContact }: { session: Session; onClose: () => void; onContact: (type: MsgType) => void }) {
+  const nome = (session.nome ?? "você").split(" ")[0];
+  const phone = (session.whatsapp ?? "").replace(/\D/g, "");
+  const [copied, setCopied] = useState<number | null>(null);
+
+  const msgs = [
+    `Opa ${nome}! Aqui é o Bruno Dramusse. Tenho apenas 5 vagas disponíveis para a Mentoria Individual.`,
+    `O Carlos, um dos meus mentorados, seguiu o método comigo e num único dia fez R$1.783 de faturamento com ROAS de 2.72 e R$1.128 de lucro líquido. Estou a levá-lo para os 30k no dia.`,
+    `Li as tuas respostas no formulário e tens o perfil certo para estar aqui. Queres fechar uma das vagas? Se tiveres alguma dúvida antes de entrar marcamos uma call rápida para esclarecer, caso contrário fechamos direto agora.`,
+  ];
+
+  const copy = (i: number) => {
+    navigator.clipboard.writeText(msgs[i]).then(() => {
+      setCopied(i);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-md bg-[#111] rounded-2xl border border-white/10 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div>
+            <p className="font-semibold text-sm">Pitch Individual</p>
+            <p className="text-xs text-white/40 mt-0.5">{session.nome} · {session.whatsapp}</p>
+          </div>
+          <button onClick={onClose} className="text-white/40 hover:text-white text-xl leading-none">✕</button>
+        </div>
+        <div className="p-5 space-y-3">
+          <p className="text-xs text-white/40 mb-1">Envia as 3 mensagens seguidas no WhatsApp</p>
+          {msgs.map((m, i) => (
+            <div key={i} className="rounded-xl bg-white/[0.04] border border-white/10 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-white/50">{i + 1}ª mensagem</span>
+                <button
+                  onClick={() => copy(i)}
+                  className="text-xs rounded-md px-2.5 py-1 bg-white/10 hover:bg-white/15 text-white/60 hover:text-white transition-colors"
+                >
+                  {copied === i ? "Copiado ✓" : "Copiar"}
+                </button>
+              </div>
+              <p className="text-sm text-white/80 leading-relaxed">{m}</p>
+              {i === 0 && phone && (
+                <a
+                  href={`https://wa.me/${phone}?text=${encodeURIComponent(m)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => onContact("pitch")}
+                  className="mt-3 flex items-center justify-center gap-2 w-full rounded-lg bg-[#25D366] hover:opacity-90 text-white text-xs font-medium py-2 transition-opacity"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.05 21.785h-.004a9.87 9.87 0 01-5.031-1.378l-.36-.214-3.741.982.999-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.463 3.488z"/></svg>
+                  Abrir WhatsApp com a 1ª mensagem
+                </a>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>
