@@ -1091,6 +1091,18 @@ function WhatsAppButton({ session, onContact }: { session: Session; onContact?: 
   );
 }
 
+function CopyBtn({ text }: { text: string }) {
+  const [done, setDone] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(text).then(() => { setDone(true); setTimeout(() => setDone(false), 2000); });
+  };
+  return (
+    <button onClick={copy} className="text-xs rounded px-2 py-0.5 bg-white/10 hover:bg-white/20 text-white/50 hover:text-white transition-colors">
+      {done ? "✓" : "Copiar"}
+    </button>
+  );
+}
+
 function DetailDrawer({ session, onClose }: { session: Session; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex justify-end" onClick={onClose}>
@@ -1107,12 +1119,15 @@ function DetailDrawer({ session, onClose }: { session: Session; onClose: () => v
           <div className="space-y-3">
             {session.whatsapp && (
               <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                <div className="text-xs uppercase text-white/40">WhatsApp</div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs uppercase text-white/40">WhatsApp</span>
+                  <CopyBtn text={session.whatsapp} />
+                </div>
                 <a
                   href={`https://wa.me/${session.whatsapp.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 text-sm text-green-400 hover:underline flex items-center gap-1.5"
+                  className="text-sm text-green-400 hover:underline flex items-center gap-1.5"
                 >
                   {session.whatsapp}
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -1121,8 +1136,11 @@ function DetailDrawer({ session, onClose }: { session: Session; onClose: () => v
             )}
             {Object.entries(session.answers ?? {}).map(([k, v]) => (
               <div key={k} className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                <div className="text-xs uppercase text-white/40">{STEP_LABELS[k] ?? k}</div>
-                <div className="mt-1 text-sm">{v as string}</div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs uppercase text-white/40">{STEP_LABELS[k] ?? k}</span>
+                  {(k === "nome" || k === "whatsapp") && <CopyBtn text={v as string} />}
+                </div>
+                <div className="text-sm">{v as string}</div>
               </div>
             ))}
           </div>
